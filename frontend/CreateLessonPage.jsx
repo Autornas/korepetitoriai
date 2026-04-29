@@ -4,9 +4,9 @@ import { useState } from 'react';
 import Topbar from './components/Topbar';
 
 export default function CreateLessonPage() {
-  const [hasMeet, setHasMeet] = useState(true);
-  const [hasBoard, setHasBoard] = useState(true);
-  const [notify, setNotify] = useState(true);
+  const [hasMeet, setHasMeet] = useState(false);
+  const [hasBoard, setHasBoard] = useState(false);
+  const [notify, setNotify] = useState(false);
   const [duration, setDuration] = useState(60);
 
   const Toggle = ({ on, setOn }) => (
@@ -21,7 +21,7 @@ export default function CreateLessonPage() {
       <div className="p-6 space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-mono text-slate-600 uppercase tracking-widest mb-1">05 / New Lesson</p>
+            <p className="text-xs font-mono text-slate-600 uppercase tracking-widest mb-1">New Lesson</p>
             <h1 className="text-2xl font-semibold tracking-tight text-white">Create a Lesson</h1>
             <p className="text-slate-500 text-sm mt-1">Schedule a new lesson and attach materials.</p>
           </div>
@@ -42,20 +42,17 @@ export default function CreateLessonPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs text-slate-500 mb-1.5">Lesson topic</label>
-                  <input className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors" defaultValue="Quadratic equations — discriminant" />
+                  <input className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors" placeholder="e.g. Quadratic equations — discriminant" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-slate-500 mb-1.5">Student</label>
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 cursor-pointer hover:border-slate-600 transition-colors">
-                      <div className="w-5 h-5 rounded-full bg-indigo-700 flex items-center justify-center text-white text-[9px] font-semibold shrink-0">LJ</div>
-                      <span className="text-sm text-slate-200 flex-1">Lukas Jonaitis</span>
-                      <span className="text-[10px] font-mono text-slate-600">Gr. 10 · 12 lessons</span>
-                    </div>
+                    <input className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors" placeholder="Search student…" />
                   </div>
                   <div>
                     <label className="block text-xs text-slate-500 mb-1.5">Subject</label>
                     <select className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none appearance-none">
+                      <option value="">Select subject</option>
                       <option>Mathematics</option>
                     </select>
                   </div>
@@ -69,11 +66,11 @@ export default function CreateLessonPage() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs text-slate-500 mb-1.5">Date</label>
-                  <input className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors" defaultValue="2026-05-08 (Friday)" />
+                  <input type="date" className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors" />
                 </div>
                 <div>
                   <label className="block text-xs text-slate-500 mb-1.5">Time</label>
-                  <input className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors" defaultValue="14:00" />
+                  <input type="time" className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors" />
                 </div>
                 <div>
                   <label className="block text-xs text-slate-500 mb-1.5">Duration</label>
@@ -85,10 +82,6 @@ export default function CreateLessonPage() {
                     ))}
                   </div>
                 </div>
-              </div>
-              <div className="mt-4 flex gap-3 px-3 py-3 bg-green-500/5 border border-green-500/20 rounded-lg">
-                <span className="text-green-400 text-xs font-semibold shrink-0">✓</span>
-                <p className="text-xs text-slate-400">This time matches your free slots and Lukas's schedule. <strong className="text-slate-200">No conflicts found.</strong></p>
               </div>
             </div>
 
@@ -115,8 +108,7 @@ export default function CreateLessonPage() {
                   </div>
                   <div className="flex items-center gap-3 px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg">
                     <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" className="text-slate-500 shrink-0"><path d="M7 9l2-2m-1.5 4l-2 2a2.5 2.5 0 01-3.5-3.5l2-2M9.5 4l2-2a2.5 2.5 0 013.5 3.5l-2 2"/></svg>
-                    <span className="text-xs font-mono text-slate-400 flex-1">meet.google.com/xqp-mvtk-fjz</span>
-                    <button className="px-2 py-1 rounded-md bg-slate-700 border border-slate-600 text-slate-400 text-xs">Copy</button>
+                    <span className="text-xs font-mono text-slate-500 flex-1">Link will appear after generating</span>
                   </div>
                 </div>
               )}
@@ -140,11 +132,8 @@ export default function CreateLessonPage() {
                     <span className="ml-auto text-[10px] font-mono text-slate-600">∑ math formulas</span>
                     <span className="ml-3 px-2 py-0.5 rounded-full bg-slate-700 text-[10px] text-slate-400">real-time collaboration</span>
                   </div>
-                  <div className="p-4 bg-slate-800/20 min-h-[120px] text-sm">
-                    <p className="font-semibold text-white"># Discriminant</p>
-                    <p className="mt-2 text-slate-300">Quadratic equation <code className="font-mono text-indigo-300 text-xs">ax² + bx + c = 0</code> discriminant:</p>
-                    <div className="mt-3 px-3 py-2 bg-slate-800 rounded-lg font-mono text-indigo-400 text-sm">D = b² – 4ac</div>
-                    <p className="mt-3 text-slate-500 text-xs">Examples in lesson: x² – 5x + 6 = 0; 2x² + 3x – 2 = 0…</p>
+                  <div className="p-4 bg-slate-800/20 min-h-[120px] text-sm text-slate-600">
+                    Start typing your lesson notes…
                   </div>
                 </div>
               )}
@@ -163,22 +152,9 @@ export default function CreateLessonPage() {
                   </button>
                 </div>
               </div>
-              <div className="space-y-2">
-                {[
-                  { ext: 'PDF', name: 'Quadratic equations — theory.pdf', size: '1.2 MB' },
-                  { ext: 'PPTX', name: 'Discriminant — slides.pptx', size: '4.8 MB' },
-                  { ext: 'URL', name: 'Khan Academy: Quadratic formula', size: 'link' },
-                ].map((m, i) => (
-                  <div key={i} className="flex items-center gap-3 px-3 py-2.5 bg-slate-800/40 rounded-lg border border-slate-800">
-                    <span className="px-1.5 py-0.5 rounded bg-slate-700 text-[9px] font-mono font-semibold text-slate-300 shrink-0">{m.ext}</span>
-                    <span className="flex-1 text-sm text-slate-300 truncate">{m.name}</span>
-                    <span className="text-[10px] font-mono text-slate-600">{m.size}</span>
-                    <span className="px-1.5 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] text-slate-400">visible</span>
-                    <button className="text-slate-600 hover:text-slate-400 transition-colors">
-                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M4 4l8 8M12 4l-8 8"/></svg>
-                    </button>
-                  </div>
-                ))}
+              <div className="flex flex-col items-center justify-center py-8 text-slate-600">
+                <svg width="28" height="28" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1"><path d="M4 2h6l3 3v9a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M10 2v3h3"/></svg>
+                <p className="text-xs mt-2">No materials attached</p>
               </div>
             </div>
 
@@ -190,7 +166,7 @@ export default function CreateLessonPage() {
                 </span>
                 <div>
                   <p className="text-sm font-medium text-white">Notify student by email</p>
-                  <p className="text-xs text-slate-500 mt-0.5">Lukas will receive an email with lesson details and the Meet link immediately.</p>
+                  <p className="text-xs text-slate-500 mt-0.5">The student will receive an email with lesson details and the Meet link.</p>
                 </div>
               </label>
             </div>
@@ -205,24 +181,14 @@ export default function CreateLessonPage() {
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />draft
                 </span>
               </div>
-              <p className="text-[10px] font-mono text-slate-600">2026-05-08 · 14:00 – {duration === 60 ? '15:00' : duration === 90 ? '15:30' : '14:45'}</p>
-              <p className="text-base font-semibold text-white mt-2 leading-snug">Quadratic equations — discriminant</p>
+              <p className="text-[10px] font-mono text-slate-600">Date and time not set</p>
+              <p className="text-base font-semibold text-slate-500 mt-2 leading-snug">No topic yet</p>
               <hr className="border-slate-800 my-4" />
-              <div className="space-y-2.5 text-sm text-slate-400">
-                <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-slate-600" />Lukas Jonaitis · Gr. 10</div>
-                <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-slate-600" />{duration} min</div>
+              <div className="space-y-2.5 text-sm text-slate-500">
+                <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-slate-700" />No student selected</div>
+                <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-slate-700" />{duration} min</div>
                 {hasMeet && <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-slate-600" />Google Meet</div>}
                 {hasBoard && <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-slate-600" />Digital whiteboard</div>}
-                <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-slate-600" />3 materials attached</div>
-              </div>
-              <hr className="border-slate-800 my-4" />
-              <div className="flex justify-between items-baseline">
-                <span className="text-xs text-slate-500">Payment</span>
-                <span className="text-base font-semibold text-white">€35</span>
-              </div>
-              <div className="flex justify-between items-baseline mt-1">
-                <span className="text-xs text-slate-600">Collected after lesson</span>
-                <span className="text-[10px] font-mono text-slate-600">automatic</span>
               </div>
             </div>
           </div>

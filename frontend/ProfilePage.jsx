@@ -7,13 +7,7 @@ const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8);
 
 export default function ProfilePage() {
-  const [avail, setAvail] = useState(() => {
-    const s = new Set();
-    [0, 1, 2, 3, 4].forEach(d => {
-      [9, 10, 15, 16, 17].forEach(h => s.add(`${d}-${h}`));
-    });
-    return s;
-  });
+  const [avail, setAvail] = useState(new Set());
 
   const toggle = (d, h) => {
     const k = `${d}-${h}`;
@@ -28,7 +22,7 @@ export default function ProfilePage() {
       <div className="p-6 space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-mono text-slate-600 uppercase tracking-widest mb-1">04 / Profile Settings</p>
+            <p className="text-xs font-mono text-slate-600 uppercase tracking-widest mb-1">Profile Settings</p>
             <h1 className="text-2xl font-semibold tracking-tight text-white">Profile Settings</h1>
             <p className="text-slate-500 text-sm mt-1">Complete your profile so students can find and book you.</p>
           </div>
@@ -58,11 +52,11 @@ export default function ProfilePage() {
                 <div className="space-y-3">
                   <div>
                     <label className="block text-xs text-slate-500 mb-1.5">Full name</label>
-                    <input className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors" defaultValue="Rasa Kazlauskė" />
+                    <input className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors" placeholder="Your full name" />
                   </div>
                   <div>
                     <label className="block text-xs text-slate-500 mb-1.5">Headline</label>
-                    <input className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors" defaultValue="Mathematics teacher · 8 years experience · VU graduate" />
+                    <input className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors" placeholder="e.g. Mathematics teacher · 8 years experience" />
                   </div>
                 </div>
               </div>
@@ -73,23 +67,19 @@ export default function ProfilePage() {
               <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-4">02 — Pricing</p>
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  { label: 'Price per lesson (60 min)', val: '35', suffix: '/ 60 min' },
-                  { label: '90 min lesson', val: '50', suffix: '/ 90 min' },
-                  { label: 'Intro lesson', val: '0', suffix: 'free' },
+                  { label: 'Price per lesson (60 min)', suffix: '/ 60 min' },
+                  { label: '90 min lesson', suffix: '/ 90 min' },
+                  { label: 'Intro lesson', suffix: 'free' },
                 ].map((p, i) => (
                   <div key={i}>
                     <label className="block text-xs text-slate-500 mb-1.5">{p.label}</label>
                     <div className="flex items-center bg-slate-800/60 border border-slate-700 rounded-lg overflow-hidden focus-within:border-indigo-500 transition-colors">
                       <span className="px-2.5 text-slate-500 text-sm">€</span>
-                      <input className="flex-1 py-2 bg-transparent text-slate-100 text-sm outline-none min-w-0" defaultValue={p.val} />
+                      <input className="flex-1 py-2 bg-transparent text-slate-100 text-sm outline-none min-w-0" placeholder="0" />
                       <span className="px-2.5 text-slate-600 text-xs font-mono">{p.suffix}</span>
                     </div>
                   </div>
                 ))}
-              </div>
-              <div className="mt-4 flex gap-3 px-3 py-3 bg-indigo-500/5 border border-indigo-500/20 rounded-lg">
-                <span className="text-indigo-400 text-xs font-semibold shrink-0">i</span>
-                <p className="text-xs text-slate-400">Average math teacher price is <strong className="text-slate-200">€32</strong>. Your price is in the <strong className="text-slate-200">above average</strong> range.</p>
               </div>
             </div>
 
@@ -102,26 +92,12 @@ export default function ProfilePage() {
                   Add subject
                 </button>
               </div>
-              <div className="space-y-2">
-                {[{ name: 'Mathematics', grades: 'Grades 7–12' }, { name: 'VBE Mathematics', grades: 'Grade 12' }, { name: 'Algebra', grades: 'Grades 9–11' }].map((m, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_1fr_24px] gap-2 items-center p-3 bg-slate-800/40 rounded-lg border border-slate-800">
-                    <input className="px-2 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500" defaultValue={m.name} />
-                    <input className="px-2 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500" defaultValue={m.grades} />
-                    <button className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-slate-400 transition-colors">
-                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M4 4l8 8M12 4l-8 8"/></svg>
-                    </button>
-                  </div>
-                ))}
+              <div className="flex flex-col items-center justify-center py-6 text-slate-600">
+                <p className="text-xs">No subjects added yet</p>
               </div>
               <div className="mt-4">
                 <p className="text-xs text-slate-500 mb-2">Topic tags</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {['quadratic equations', 'trigonometry', 'functions', 'statistics', 'probability', 'VBE prep', 'algebra', 'geometry'].map(tag => (
-                    <span key={tag} className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-400">
-                      {tag}
-                      <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M4 4l8 8M12 4l-8 8"/></svg>
-                    </span>
-                  ))}
                   <span className="px-2 py-1 text-xs text-slate-600">+ add…</span>
                 </div>
               </div>
@@ -172,10 +148,10 @@ export default function ProfilePage() {
             <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
               <div className="flex items-center justify-between mb-4">
                 <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">05 — About You</p>
-                <span className="text-xs font-mono text-slate-500">342 / 800</span>
+                <span className="text-xs font-mono text-slate-500">0 / 800</span>
               </div>
               <textarea className="w-full px-3 py-3 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors resize-none" rows={7}
-                defaultValue={`Hello! I'm Rasa, a mathematics teacher with 8 years of experience. I help students in grades 7–12 understand mathematics step by step.\n\nVBE math preparation is one of my strongest areas — over 5 years, 92% of my students achieved 8+ marks.\n\nFirst lesson is free. We'll talk about where you're stuck and I'll suggest an individual plan.`} />
+                placeholder="Introduce yourself — your experience, teaching style, and what students can expect from your lessons." />
             </div>
           </div>
 
@@ -190,22 +166,16 @@ export default function ProfilePage() {
                 </span>
               </div>
               <div className="aspect-video bg-slate-800 rounded-lg border border-slate-700 flex items-center justify-center text-slate-600 text-xs mb-4">photo · 16:9</div>
-              <p className="text-base font-semibold text-white">Rasa Kazlauskė</p>
-              <p className="text-xs text-slate-500 mt-1">Mathematics teacher · 8 yrs experience</p>
+              <p className="text-base font-semibold text-slate-500">Your name</p>
+              <p className="text-xs text-slate-600 mt-1">Headline appears here</p>
               <div className="flex flex-wrap gap-1.5 mt-3">
-                <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-xs text-indigo-400">Mathematics</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-400">VBE</span>
-                <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-400">Algebra</span>
+                <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-600">No subjects yet</span>
               </div>
               <hr className="border-slate-800 my-4" />
               <div className="flex justify-between">
                 <div>
                   <p className="text-[10px] text-slate-500 uppercase tracking-wide">Price</p>
-                  <p className="text-lg font-semibold text-white mt-1">€35 <span className="text-xs font-normal text-slate-500">/ 60 min</span></p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wide">Rating</p>
-                  <p className="text-lg font-semibold text-white mt-1">4.9 <span className="text-xs font-normal text-slate-500">· 47 reviews</span></p>
+                  <p className="text-lg font-semibold text-slate-600 mt-1">— <span className="text-xs font-normal text-slate-600">/ 60 min</span></p>
                 </div>
               </div>
               <button className="mt-4 w-full py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 transition-colors">Book a Lesson</button>

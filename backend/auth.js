@@ -1,56 +1,68 @@
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut as fbSignOut,
-  updateProfile,
-  onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup,
-} from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { supabase } from './supabase';
+
+function requireSupabase() {
+  if (!supabase) {
+    const err = new Error('Supabase is not configured. Add your credentials to .env.local.');
+    err.code = 'auth/not-configured';
+    throw err;
+  }
+}
 
 export async function registerUser({ name, email, password, role }) {
-  const credential = await createUserWithEmailAndPassword(auth, email, password);
-  await updateProfile(credential.user, { displayName: name });
-  await setDoc(doc(db, 'users', credential.user.uid), {
-    name,
+  requireSupabase();
+  const { data, error } = await supabase.auth.signUp({
     email,
-    role: role ?? 'student',
-    createdAt: new Date().toISOString(),
+    password,
+    options: { data: { full_name: name, role: role ?? 'student' } },
   });
-  return credential.user;
+  if (error) throw error;
+  return data.user;
 }
 
 export async function loginUser({ email, password }) {
-  const credential = await signInWithEmailAndPassword(auth, email, password);
-  return credential.user;
+  requireSupabase();
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  return data.user;
 }
 
 export async function loginWithGoogle(role = 'student') {
-  const provider = new GoogleAuthProvider();
-  const credential = await signInWithPopup(auth, provider);
-  const existing = await getUserProfile(credential.user.uid);
-  if (!existing) {
-    await setDoc(doc(db, 'users', credential.user.uid), {
-      name: credential.user.displayName,
-      email: credential.user.email,
-      role,
-      createdAt: new Date().toISOString(),
-    });
+  requireSupabase();
+  if (typeof window !== 'undefined') {
+    sessionStorage.setItem('pendingGoogleRole', role);
   }
-  return credential.user;
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/dashboard`,
+    },
+  });
+  if (error) throw error;
 }
 
 export async function signOut() {
-  await fbSignOut(auth);
+  if (!supabase) return;
+  await supabase.auth.signOut();
 }
 
 export async function getUserProfile(uid) {
-  const snap = await getDoc(doc(db, 'users', uid));
-  return snap.exists() ? snap.data() : null;
+  if (!supabase) return null;
+  const { data } = await supabase.from('profiles').select('*').eq('id', uid).single();
+  return data ?? null;
 }
 
-export function onAuthChanged(callback) {
-  return onAuthStateChanged(auth, callback);
+export async function saveUserProfile(uid, data) {
+  if (!supabase) return;
+  const { error } = await supabase.from('profiles').upsert({ id: uid, ...data });
+  if (error) throw error;
+}
+
+export async function uploadProfilePhoto(uid, file) {
+  if (!supabase) throw new Error('Supabase not configured');
+  const path = `${uid}/avatar`;
+  const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+  if (error) throw error;
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+  await saveUserProfile(uid, { photo_url: data.publicUrl });
+  return data.publicUrl;
 }

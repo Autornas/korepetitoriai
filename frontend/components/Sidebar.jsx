@@ -46,16 +46,17 @@ const sections = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router   = useRouter();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();
     router.replace('/login');
   };
 
-  const initials = user?.displayName
-    ? user.displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-    : user?.email?.[0].toUpperCase() ?? '?';
+  const displayName = profile?.name ?? user?.email ?? '';
+  const initials = displayName
+    ? displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+    : '?';
 
   return (
     <aside className="w-60 shrink-0 bg-slate-950 border-r border-slate-800 flex flex-col overflow-y-auto">
@@ -109,7 +110,7 @@ export default function Sidebar() {
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-slate-200 text-xs font-medium truncate">
-            {user?.displayName ?? user?.email ?? '—'}
+            {displayName || '—'}
           </div>
           <div className="text-slate-500 text-[10px] truncate">{user?.email ?? ''}</div>
         </div>

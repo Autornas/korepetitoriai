@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { registerUser, loginWithGoogle } from '@/backend/auth';
+import { useAuth } from './components/AuthProvider';
 
 const ROLES = { TEACHER: "teacher", STUDENT: "student" };
 
@@ -59,15 +60,28 @@ function validate(fields) {
   return errors;
 }
 
-function friendlyError(code) {
-  if (code === 'auth/email-already-in-use') return 'An account with this email already exists.';
-  if (code === 'auth/weak-password') return 'Password is too weak.';
-  if (code === 'auth/popup-closed-by-user') return '';
-  return 'Something went wrong. Please try again.';
+function friendlyError(err) {
+  const code = err?.code;
+  const msg  = err?.message ?? '';
+  if (code === 'auth/not-configured')
+    return 'Supabase is not configured. Fill in your .env.local file.';
+  if (code === 'user_already_exists' || msg.includes('already registered'))
+    return 'An account with this email already exists.';
+  if (code === 'weak_password' || msg.includes('Password should be'))
+    return 'Password is too weak (minimum 6 characters).';
+  return msg || 'Something went wrong. Please try again.';
 }
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, authLoading, router]);
+
   const [role, setRole] = useState(ROLES.STUDENT);
   const [fields, setFields] = useState({ name: "", email: "", password: "", confirm: "" });
   const [errors, setErrors] = useState({});
@@ -100,10 +114,9 @@ export default function RegisterPage() {
     setFirebaseError("");
     try {
       await registerUser({ name: fields.name, email: fields.email, password: fields.password, role });
-      router.push('/dashboard');
+      // Let onAuthStateChanged propagate → useEffect handles redirect
     } catch (err) {
-      setFirebaseError(friendlyError(err.code));
-    } finally {
+      setFirebaseError(friendlyError(err));
       setLoading(false);
     }
   };
@@ -113,11 +126,9 @@ export default function RegisterPage() {
     setFirebaseError("");
     try {
       await loginWithGoogle(role);
-      router.push('/dashboard');
+      // Redirects to Google — page navigates away, loading stays true
     } catch (err) {
-      const msg = friendlyError(err.code);
-      if (msg) setFirebaseError(msg);
-    } finally {
+      setFirebaseError(friendlyError(err));
       setLoading(false);
     }
   };

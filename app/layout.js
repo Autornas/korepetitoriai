@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from 'next/font/google';
+import { AuthProvider } from '@/frontend/components/AuthProvider';
 import './globals.css';
 
 const geistSans = Geist({ variable: '--font-geist-sans', subsets: ['latin'] });
@@ -12,7 +13,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body className="min-h-full flex flex-col antialiased">{children}</body>
+      <body className="min-h-full flex flex-col antialiased">
+          <AuthProvider>{children}</AuthProvider>
+        </body>
     </html>
   );
 }

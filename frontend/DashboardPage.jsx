@@ -90,7 +90,6 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 {[
                   { href: '/lessons/create', label: 'Create a lesson' },
-                  { href: '/materials', label: 'Upload material' },
                   { href: '/calendar', label: 'Edit availability' },
                 ].map((a, i) => (
                   <Link key={i} href={a.href} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-800/50 border border-slate-800 text-slate-300 text-sm hover:bg-slate-800 hover:text-white transition-colors group">

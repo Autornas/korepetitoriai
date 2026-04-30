@@ -88,6 +88,7 @@ export default function RegisterPage() {
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [firebaseError, setFirebaseError] = useState("");
+  const [infoMessage, setInfoMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   const visibleErrors = Object.fromEntries(
@@ -112,9 +113,16 @@ export default function RegisterPage() {
     if (!isValid) return;
     setLoading(true);
     setFirebaseError("");
+    setInfoMessage("");
     try {
-      await registerUser({ name: fields.name, email: fields.email, password: fields.password, role });
-      // Let onAuthStateChanged propagate → useEffect handles redirect
+      const { session } = await registerUser({ name: fields.name, email: fields.email, password: fields.password, role });
+      if (!session) {
+        // Email confirmation is required — no auth state change will fire
+        setLoading(false);
+        setInfoMessage("Account created! Check your inbox to confirm your email, then sign in.");
+        return;
+      }
+      // Session exists → AuthProvider's onAuthStateChange will fire → useEffect redirects
     } catch (err) {
       setFirebaseError(friendlyError(err));
       setLoading(false);
@@ -158,6 +166,12 @@ export default function RegisterPage() {
           {firebaseError && (
             <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
               {firebaseError}
+            </div>
+          )}
+
+          {infoMessage && (
+            <div className="mb-4 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm">
+              {infoMessage}
             </div>
           )}
 

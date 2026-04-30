@@ -16,7 +16,7 @@ export async function registerUser({ name, email, password, role }) {
     options: { data: { full_name: name, role: role ?? 'student' } },
   });
   if (error) throw error;
-  return data.user;
+  return { user: data.user, session: data.session };
 }
 
 export async function loginUser({ email, password }) {

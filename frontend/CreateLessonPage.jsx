@@ -23,7 +23,7 @@ export default function CreateLessonPage() {
           <div>
             <p className="text-xs font-mono text-slate-600 uppercase tracking-widest mb-1">New Lesson</p>
             <h1 className="text-2xl font-semibold tracking-tight text-white">Create a Lesson</h1>
-            <p className="text-slate-500 text-sm mt-1">Schedule a new lesson and attach materials.</p>
+            <p className="text-slate-500 text-sm mt-1">Schedule a new lesson.</p>
           </div>
           <div className="flex gap-2">
             <button className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-sm hover:bg-slate-800 transition-colors">Save Draft</button>
@@ -137,25 +137,6 @@ export default function CreateLessonPage() {
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Materials */}
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">05 — Materials</p>
-                <div className="flex gap-2">
-                  <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs hover:bg-slate-700 transition-colors">
-                    <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 3v10M3 8h10"/></svg>Add file
-                  </button>
-                  <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs hover:bg-slate-700 transition-colors">
-                    <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M7 9l2-2m-1.5 4l-2 2a2.5 2.5 0 01-3.5-3.5l2-2M9.5 4l2-2a2.5 2.5 0 013.5 3.5l-2 2"/></svg>Add link
-                  </button>
-                </div>
-              </div>
-              <div className="flex flex-col items-center justify-center py-8 text-slate-600">
-                <svg width="28" height="28" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1"><path d="M4 2h6l3 3v9a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M10 2v3h3"/></svg>
-                <p className="text-xs mt-2">No materials attached</p>
-              </div>
             </div>
 
             {/* Notify */}

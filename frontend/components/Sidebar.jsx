@@ -29,16 +29,14 @@ const sections = [
   {
     label: 'TEACHING',
     items: [
-      { href: '/profile',        label: 'Profile Settings', num: '04', icon: 'User'   },
-      { href: '/lessons/create', label: 'New Lesson',       num: '05', icon: 'Plus'   },
-      { href: '/materials',      label: 'Materials',        num: '06', icon: 'Folder' },
-      { href: '/lessons',        label: 'My Lessons',       num: '07', icon: 'Video'  },
+      { href: '/lessons/create', label: 'New Lesson',       num: '04', icon: 'Plus'   },
+      { href: '/lessons',        label: 'My Lessons',       num: '05', icon: 'Video'  },
     ],
   },
   {
     label: 'DISCOVER',
     items: [
-      { href: '/tutors',         label: 'Find a Tutor',    num: '08', icon: 'Search' },
+      { href: '/tutors',         label: 'Find a Tutor',    num: '06', icon: 'Search', studentOnly: true },
     ],
   },
 ];
@@ -58,6 +56,11 @@ export default function Sidebar() {
     ? displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
     : '?';
 
+  const isTeacher = profile?.role === 'teacher';
+  const visibleSections = sections
+    .map(sec => ({ ...sec, items: sec.items.filter(it => !(it.studentOnly && isTeacher)) }))
+    .filter(sec => sec.items.length > 0);
+
   return (
     <aside className="w-60 shrink-0 bg-slate-950 border-r border-slate-800 flex flex-col overflow-y-auto">
       <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-800">
@@ -71,7 +74,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-4">
-        {sections.map((sec) => (
+        {visibleSections.map((sec) => (
           <div key={sec.label} className="mb-6">
             <div className="px-2 mb-2 text-[9px] font-semibold tracking-[0.1em] text-slate-600 uppercase">
               {sec.label}
@@ -104,20 +107,28 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="flex items-center gap-3 px-4 py-4 border-t border-slate-800">
-        <div className="w-7 h-7 rounded-full bg-indigo-700 flex items-center justify-center text-white text-[10px] font-semibold shrink-0">
-          {initials}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-slate-200 text-xs font-medium truncate">
-            {displayName || '—'}
+      <div className="flex items-center gap-2 px-3 py-3 border-t border-slate-800">
+        <Link
+          href="/profile"
+          title="Profile settings"
+          className={`flex items-center gap-3 flex-1 min-w-0 px-2 py-1.5 rounded-lg transition-colors ${
+            pathname === '/profile' ? 'bg-slate-800' : 'hover:bg-slate-900'
+          }`}
+        >
+          <div className="w-7 h-7 rounded-full bg-indigo-700 flex items-center justify-center text-white text-[10px] font-semibold shrink-0">
+            {initials}
           </div>
-          <div className="text-slate-500 text-[10px] truncate">{user?.email ?? ''}</div>
-        </div>
+          <div className="min-w-0 flex-1 text-left">
+            <div className="text-slate-200 text-xs font-medium truncate">
+              {displayName || '—'}
+            </div>
+            <div className="text-slate-500 text-[10px] truncate">{user?.email ?? ''}</div>
+          </div>
+        </Link>
         <button
           onClick={handleSignOut}
           title="Sign out"
-          className="text-slate-600 hover:text-red-400 transition-colors"
+          className="shrink-0 p-2 rounded-lg text-slate-600 hover:text-red-400 hover:bg-slate-900 transition-colors"
         >
           <Icons.Logout />
         </button>

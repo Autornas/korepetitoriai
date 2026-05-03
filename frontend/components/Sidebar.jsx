@@ -22,21 +22,20 @@ const sections = [
     label: 'OVERVIEW',
     items: [
       { href: '/dashboard',      label: 'Dashboard',       num: '01', icon: 'Grid'   },
-      { href: '/calendar',       label: 'Calendar',        num: '02', icon: 'Cal'    },
-      { href: '/messages',       label: 'Messages',        num: '03', icon: 'Bell'   },
+      { href: '/messages',       label: 'Messages',        num: '02', icon: 'Bell'   },
     ],
   },
   {
     label: 'TEACHING',
     items: [
-      { href: '/lessons/create', label: 'New Lesson',       num: '04', icon: 'Plus'   },
-      { href: '/lessons',        label: 'My Lessons',       num: '05', icon: 'Video'  },
+      { href: '/lessons/create', label: 'New Lesson',       num: '03', icon: 'Plus'   },
+      { href: '/lessons',        label: 'My Lessons',       num: '04', icon: 'Video'  },
     ],
   },
   {
     label: 'DISCOVER',
     items: [
-      { href: '/tutors',         label: 'Find a Tutor',    num: '06', icon: 'Search', studentOnly: true },
+      { href: '/tutors',         label: 'Find a Tutor',    num: '05', icon: 'Search', studentOnly: true },
     ],
   },
 ];

@@ -1,180 +1,374 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Topbar from './components/Topbar';
+import { useAuth } from './components/AuthProvider';
+import { useLanguage } from './components/LanguageProvider';
+import { listTeachers, createLessonRequest, setLessonMeetLink } from '@/backend/lessons';
+import { createMeetEvent } from '@/backend/google';
+
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+function ymd(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function startOfWeek(d = new Date()) {
+  const day = d.getDay();
+  const monday = new Date(d);
+  monday.setHours(0, 0, 0, 0);
+  monday.setDate(d.getDate() - ((day + 6) % 7));
+  return monday;
+}
+
+function SlotCalendarHeader({ weekStart, onShift, prevTitle, nextTitle }) {
+  const dates = Array.from({ length: 7 }, (_, i) => {
+    const dt = new Date(weekStart);
+    dt.setDate(weekStart.getDate() + i);
+    return dt;
+  });
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => onShift(-1)}
+        title={prevTitle}
+        className="flex items-center px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700 transition-colors"
+      >
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M10 4l-4 4 4 4"/></svg>
+      </button>
+      <span className="text-[11px] font-mono text-slate-400">
+        {dates[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {dates[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+      </span>
+      <button
+        type="button"
+        onClick={() => onShift(1)}
+        title={nextTitle}
+        className="flex items-center px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700 transition-colors"
+      >
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M6 4l4 4-4 4"/></svg>
+      </button>
+    </div>
+  );
+}
+
+function SlotCalendar({ availSet, weekStart, selectedDate, selectedHour, onSelect }) {
+  const dates = Array.from({ length: 7 }, (_, i) => {
+    const dt = new Date(weekStart);
+    dt.setDate(weekStart.getDate() + i);
+    return dt;
+  });
+  const todayKey = ymd(new Date());
+  const now = new Date();
+
+  // Compute hour range from teacher's availability so the grid stays compact.
+  const hours = (() => {
+    const set = new Set();
+    availSet.forEach(k => {
+      const h = parseInt(k.split('-')[1], 10);
+      if (!Number.isNaN(h)) set.add(h);
+    });
+    if (set.size === 0) return [];
+    const arr = [...set].sort((a, b) => a - b);
+    return Array.from({ length: arr[arr.length - 1] - arr[0] + 1 }, (_, i) => arr[0] + i);
+  })();
+
+  return (
+    <div className="rounded-lg border border-slate-800 overflow-hidden">
+      <div className="grid" style={{ gridTemplateColumns: '52px repeat(7, 1fr)' }}>
+        <div className="border-b border-slate-800 h-11 bg-slate-950/40" />
+        {dates.map((d, i) => {
+          const isToday = ymd(d) === todayKey;
+          return (
+            <div key={i} className="border-b border-slate-800 border-l h-11 flex flex-col items-center justify-center bg-slate-950/40">
+              <span className="text-[10px] text-slate-600">{DAYS[i]}</span>
+              <span className={`text-xs font-semibold mt-0.5 w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-indigo-600 text-white' : 'text-slate-300'}`}>
+                {d.getDate()}
+              </span>
+            </div>
+          );
+        })}
+
+        {hours.map(h => (
+          <div key={`row-${h}`} className="contents">
+            <div className="border-t border-slate-800 text-[10px] font-mono text-slate-600 flex items-start justify-end pr-2 pt-1.5" style={{ height: 36 }}>
+              {String(h).padStart(2, '0')}:00
+            </div>
+            {dates.map((d, di) => {
+              const dKey = ymd(d);
+              const isAvailable = availSet.has(`${di}-${h}`);
+              const slotDate = new Date(d);
+              slotDate.setHours(h, 0, 0, 0);
+              const isPast = slotDate.getTime() < now.getTime();
+              const enabled = isAvailable && !isPast;
+              const isSelected = enabled && selectedDate === dKey && selectedHour === String(h).padStart(2, '0');
+              return (
+                <button
+                  key={`c-${h}-${di}`}
+                  type="button"
+                  disabled={!enabled}
+                  onClick={() => onSelect(dKey, String(h).padStart(2, '0'))}
+                  title={enabled ? `${dKey} ${String(h).padStart(2,'0')}:00` : ''}
+                  className={`border-t border-l border-slate-800 transition-colors ${
+                    isSelected
+                      ? 'bg-indigo-600 hover:bg-indigo-500'
+                      : enabled
+                        ? 'bg-indigo-500/15 hover:bg-indigo-500/30 cursor-pointer'
+                        : 'bg-slate-950/20'
+                  }`}
+                  style={{ height: 36 }}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function CreateLessonPage() {
-  const [hasMeet, setHasMeet] = useState(false);
-  const [hasBoard, setHasBoard] = useState(false);
-  const [notify, setNotify] = useState(false);
-  const [duration, setDuration] = useState(60);
+  const router = useRouter();
+  const params = useSearchParams();
+  const { user, googleToken } = useAuth();
+  const { t } = useLanguage();
 
-  const Toggle = ({ on, setOn }) => (
-    <button onClick={() => setOn(!on)} className={`w-8 h-4 rounded-full transition-colors relative ${on ? 'bg-indigo-600' : 'bg-slate-700'}`}>
-      <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-4' : 'translate-x-0.5'}`} />
-    </button>
+  const [teachers, setTeachers] = useState([]);
+  const [loadingTeachers, setLoadingTeachers] = useState(true);
+  const [teacherId, setTeacherId] = useState(params.get('teacherId') ?? '');
+  const [subject, setSubject] = useState('');
+  const [date, setDate] = useState('');
+  const [hour, setHour] = useState('');
+  const time = hour ? `${hour}:00` : '';
+  const [notes, setNotes] = useState('');
+  const [weekStart, setWeekStart] = useState(() => startOfWeek());
+
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const teacher = teachers.find(tt => tt.id === teacherId);
+  const availSet = useMemo(
+    () => new Set(teacher?.availability ?? []),
+    [teacher],
   );
+
+  // Reset selected slot and subject when the teacher changes.
+  useEffect(() => {
+    setDate('');
+    setHour('');
+    setSubject('');
+  }, [teacherId]);
+
+  const teacherSubjects = useMemo(
+    () => (teacher?.subjects ?? []).filter(s => s?.name).map(s => s.name),
+    [teacher],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    listTeachers()
+      .then(data => { if (!cancelled) setTeachers(data); })
+      .catch(e   => { if (!cancelled) setError(e.message ?? 'Failed to load tutors.'); })
+      .finally(() => { if (!cancelled) setLoadingTeachers(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const isValid =
+    teacherId
+    && date
+    && hour
+    && (teacherSubjects.length === 0 || subject);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!user || !isValid || submitting) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const lesson = await createLessonRequest({ studentId: user.id, teacherId, date, time, subject, notes });
+
+      // Best-effort: create a Google Calendar event with a Meet link. Only
+      // possible if the student signed in with Google in this session.
+      if (googleToken && teacher?.email) {
+        try {
+          const { meetLink } = await createMeetEvent({
+            token: googleToken,
+            lessonId: lesson.id,
+            summary: subject ? `${subject} lesson with ${teacher.name ?? ''}`.trim() : `Lesson with ${teacher.name ?? ''}`.trim(),
+            description: notes || '',
+            date,
+            time: `${time}:00`,
+            durationMin: 60,
+            attendeeEmails: [user.email, teacher.email],
+          });
+          if (meetLink) await setLessonMeetLink(lesson.id, meetLink);
+        } catch (calendarErr) {
+          // Don't block the booking on calendar failures — the lesson still
+          // exists and JoinSection falls back to a Jitsi room.
+          console.warn('Calendar event creation failed:', calendarErr);
+        }
+      }
+
+      router.replace('/lessons');
+    } catch (err) {
+      setError(err.message ?? 'Failed to send request.');
+      setSubmitting(false);
+    }
+  };
 
   return (
     <>
-      <Topbar crumbs={['New Lesson']} />
-      <div className="p-6 space-y-6">
+      <Topbar crumbs={[t('create.crumb')]} />
+      <form onSubmit={handleSubmit} className="p-6 space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-mono text-slate-600 uppercase tracking-widest mb-1">New Lesson</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-white">Create a Lesson</h1>
-            <p className="text-slate-500 text-sm mt-1">Schedule a new lesson.</p>
+            <p className="text-xs font-mono text-slate-600 uppercase tracking-widest mb-1">{t('create.kicker')}</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">{t('create.title')}</h1>
+            <p className="text-slate-500 text-sm mt-1">{t('create.subtitle')}</p>
           </div>
-          <div className="flex gap-2">
-            <button className="px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-sm hover:bg-slate-800 transition-colors">Save Draft</button>
-            <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-500 transition-colors">
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 8.5L6.5 12 13 4.5"/></svg>
-              Create Lesson
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={!isValid || submitting}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 8.5L6.5 12 13 4.5"/></svg>
+            {submitting ? t('create.sending') : t('create.send')}
+          </button>
         </div>
+
+        {error && (
+          <div className="px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">{error}</div>
+        )}
 
         <div className="grid grid-cols-[1fr_300px] gap-4">
           <div className="space-y-4">
-            {/* Topic */}
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
-              <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-4">01 — Topic & Context</p>
-              <div className="space-y-4">
+            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5 space-y-4">
+              <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">{t('create.tutor')}</p>
+              <div>
+                <label className="block text-xs text-slate-500 mb-1.5">{t('create.chooseTutor')}</label>
+                <select
+                  value={teacherId}
+                  onChange={e => setTeacherId(e.target.value)}
+                  disabled={loadingTeachers}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors"
+                >
+                  <option value="">{loadingTeachers ? t('common.loading') : t('create.selectTutor')}</option>
+                  {teachers.map(tt => (
+                    <option key={tt.id} value={tt.id}>
+                      {tt.name ?? '—'} {tt.headline ? `· ${tt.headline}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {teacher && (
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">Lesson topic</label>
-                  <input className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors" placeholder="e.g. Quadratic equations — discriminant" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1.5">Student</label>
-                    <input className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors" placeholder="Search student…" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1.5">Subject</label>
-                    <select className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none appearance-none">
-                      <option value="">Select subject</option>
-                      <option>Mathematics</option>
+                  <label className="block text-xs text-slate-500 mb-1.5">
+                    {t('create.subject')} <span className="text-rose-400">*</span>
+                  </label>
+                  {teacherSubjects.length === 0 ? (
+                    <p className="text-[11px] text-amber-400">{t('create.noSubjects')}</p>
+                  ) : (
+                    <select
+                      value={subject}
+                      onChange={e => setSubject(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors"
+                    >
+                      <option value="">{t('create.subjectPh')}</option>
+                      {teacherSubjects.map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
                     </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Date & Time */}
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
-              <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-4">02 — Date & Time</p>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">Date</label>
-                  <input type="date" className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors" />
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">Time</label>
-                  <input type="time" className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors" />
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">Duration</label>
-                  <div className="flex bg-slate-800 rounded-lg p-0.5 border border-slate-700">
-                    {[45, 60, 90].map(d => (
-                      <button key={d} onClick={() => setDuration(d)} className={`flex-1 py-1.5 rounded-md text-xs transition-colors ${duration === d ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'}`}>
-                        {d} min
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Meeting link */}
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">03 — Meeting Link</p>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-xs text-slate-400">Enable</span>
-                  <Toggle on={hasMeet} setOn={setHasMeet} />
-                </label>
-              </div>
-              {hasMeet && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 px-3 py-3 bg-slate-800/50 border border-slate-700 rounded-lg">
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shrink-0">
-                      <span className="font-mono text-[10px] font-bold text-emerald-700">M</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-white">Google Meet</p>
-                      <p className="text-[10px] font-mono text-slate-500">Auto-generated link · requires Google account</p>
-                    </div>
-                    <button className="ml-auto px-3 py-1.5 rounded-lg bg-slate-700 border border-slate-600 text-slate-300 text-xs hover:bg-slate-600 transition-colors">Generate</button>
-                  </div>
-                  <div className="flex items-center gap-3 px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-lg">
-                    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" className="text-slate-500 shrink-0"><path d="M7 9l2-2m-1.5 4l-2 2a2.5 2.5 0 01-3.5-3.5l2-2M9.5 4l2-2a2.5 2.5 0 013.5 3.5l-2 2"/></svg>
-                    <span className="text-xs font-mono text-slate-500 flex-1">Link will appear after generating</span>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Whiteboard */}
             <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">04 — Digital Whiteboard</p>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-xs text-slate-400">Enable board</span>
-                  <Toggle on={hasBoard} setOn={setHasBoard} />
-                </label>
+                <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">{t('create.dateTime')}</p>
+                {teacher && availSet.size > 0 && (
+                  <SlotCalendarHeader
+                    weekStart={weekStart}
+                    onShift={(delta) => {
+                      const next = new Date(weekStart);
+                      next.setDate(weekStart.getDate() + delta * 7);
+                      setWeekStart(next);
+                    }}
+                    prevTitle={t('create.weekPrev')}
+                    nextTitle={t('create.weekNext')}
+                  />
+                )}
               </div>
-              {hasBoard && (
-                <div className="border border-slate-700 rounded-lg overflow-hidden">
-                  <div className="flex items-center gap-1 px-3 py-2 border-b border-slate-700 bg-slate-800/50">
-                    {['B', 'I', '—', '≡', '⊞'].map((ic, i) => (
-                      <button key={i} className={`px-2 py-1 rounded text-xs ${ic === '—' ? 'text-slate-700 px-0.5' : 'text-slate-400 hover:bg-slate-700 hover:text-white transition-colors'}`}>{ic}</button>
-                    ))}
-                    <span className="ml-auto text-[10px] font-mono text-slate-600">∑ math formulas</span>
-                    <span className="ml-3 px-2 py-0.5 rounded-full bg-slate-700 text-[10px] text-slate-400">real-time collaboration</span>
-                  </div>
-                  <div className="p-4 bg-slate-800/20 min-h-[120px] text-sm text-slate-600">
-                    Start typing your lesson notes…
-                  </div>
-                </div>
+
+              {!teacher ? (
+                <p className="text-xs text-slate-500">{t('create.pickTutorFirst')}</p>
+              ) : availSet.size === 0 ? (
+                <p className="text-xs text-amber-400">{t('create.noAvailability')}</p>
+              ) : (
+                <SlotCalendar
+                  availSet={availSet}
+                  weekStart={weekStart}
+                  selectedDate={date}
+                  selectedHour={hour}
+                  onSelect={(d, h) => { setDate(d); setHour(h); }}
+                />
               )}
             </div>
 
-            {/* Notify */}
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-4">
-              <label className="flex items-start gap-3 cursor-pointer" onClick={() => setNotify(!notify)}>
-                <span className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0 transition-colors ${notify ? 'bg-indigo-600' : 'border border-slate-700'}`}>
-                  {notify && <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 8.5L6.5 12 13 4.5"/></svg>}
-                </span>
-                <div>
-                  <p className="text-sm font-medium text-white">Notify student by email</p>
-                  <p className="text-xs text-slate-500 mt-0.5">The student will receive an email with lesson details and the Meet link.</p>
-                </div>
-              </label>
+            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">{t('create.notes')}</p>
+                <span className="text-xs font-mono text-slate-500">{notes.length} / 500</span>
+              </div>
+              <textarea
+                rows={5}
+                value={notes}
+                onChange={e => setNotes(e.target.value.slice(0, 500))}
+                placeholder={t('create.notesPh')}
+                className="w-full px-3 py-3 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors resize-none"
+              />
             </div>
           </div>
 
-          {/* Summary */}
           <div>
             <div className="bg-slate-900 rounded-xl border border-slate-800 p-5 sticky top-4">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-white">Lesson Preview</h2>
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-xs text-indigo-400">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />draft
+                <h2 className="text-sm font-semibold text-white">{t('create.preview')}</h2>
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-[10px] text-amber-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />{t('status.pending').toLowerCase()}
                 </span>
               </div>
-              <p className="text-[10px] font-mono text-slate-600">Date and time not set</p>
-              <p className="text-base font-semibold text-slate-500 mt-2 leading-snug">No topic yet</p>
+              <p className="text-[10px] font-mono text-slate-600">
+                {date && time ? `${date} · ${time}` : t('create.notSet')}
+              </p>
+              <p className="text-base font-semibold text-slate-200 mt-2 leading-snug">
+                {teacher?.name ?? t('create.noTutor')}
+              </p>
+              {teacher?.headline && <p className="text-xs text-slate-500 mt-1">{teacher.headline}</p>}
+              {subject && (
+                <span className="inline-flex mt-2 px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-[11px] text-indigo-300">
+                  {subject}
+                </span>
+              )}
               <hr className="border-slate-800 my-4" />
               <div className="space-y-2.5 text-sm text-slate-500">
-                <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-slate-700" />No student selected</div>
-                <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-slate-700" />{duration} min</div>
-                {hasMeet && <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-slate-600" />Google Meet</div>}
-                {hasBoard && <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-slate-600" />Digital whiteboard</div>}
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                  {teacher?.price_60 != null ? `€${teacher.price_60} / 60 min` : t('create.priceOnReq')}
+                </div>
+                {notes && (
+                  <div className="text-xs text-slate-400 leading-relaxed line-clamp-4">{notes}</div>
+                )}
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </form>
     </>
   );
 }

@@ -1,6 +1,21 @@
+'use client';
+
+import { useAuth } from './AuthProvider';
+import { useLanguage } from './LanguageProvider';
+
 export default function Topbar({ crumbs }) {
+  const { isAdmin, role, actualRole, setRoleOverride } = useAuth();
+  const { lang, setLang, t } = useLanguage();
+
+  const handleToggle = () => {
+    const next = role === 'teacher' ? 'student' : 'teacher';
+    setRoleOverride(next === actualRole ? null : next);
+  };
+
+  const toggleLang = () => setLang(lang === 'en' ? 'lt' : 'en');
+
   return (
-    <div className="h-12 border-b border-slate-800 bg-slate-950 flex items-center px-6 gap-4 shrink-0">
+    <div className="h-12 border-b border-slate-800 bg-slate-950 flex items-center px-6 gap-3 shrink-0">
       <div className="flex items-center gap-1.5 text-xs text-slate-500 flex-1 min-w-0">
         <span>Korepetitor</span>
         {crumbs?.map((c, i) => (
@@ -13,27 +28,31 @@ export default function Topbar({ crumbs }) {
         ))}
       </div>
 
-      <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-slate-500 text-xs w-56 cursor-text">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <circle cx="7" cy="7" r="4" /><path d="M10 10l3 3" />
+      <button
+        onClick={toggleLang}
+        title={t('lang.toggleTitle')}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-slate-700 bg-slate-900 text-slate-300 text-[11px] font-mono hover:bg-slate-800 transition-colors"
+      >
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <circle cx="8" cy="8" r="6"/>
+          <path d="M2 8h12M8 2c2 2 2 10 0 12M8 2c-2 2-2 10 0 12"/>
         </svg>
-        <span className="flex-1">Search lessons, students…</span>
-        <span className="font-mono bg-slate-800 px-1 py-0.5 rounded text-[10px]">⌘K</span>
-      </div>
-
-      <button className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-800 hover:text-slate-300 transition-colors relative">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
-          <path d="M4 7a4 4 0 018 0v3l1 2H3l1-2V7z" /><path d="M6.5 13a1.5 1.5 0 003 0" />
-        </svg>
-        <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+        <span>{lang.toUpperCase()}</span>
       </button>
 
-      <button className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-800 hover:text-slate-300 transition-colors">
-        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
-          <circle cx="8" cy="8" r="2" />
-          <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3 3l1.5 1.5M11.5 11.5L13 13M3 13l1.5-1.5M11.5 4.5L13 3" />
-        </svg>
-      </button>
+      {isAdmin && role && (
+        <button
+          onClick={handleToggle}
+          title={`Currently viewing as ${role}. Click to switch.`}
+          className="flex items-center gap-2 px-2.5 py-1 rounded-md border border-indigo-500/40 bg-indigo-500/10 text-indigo-300 text-[11px] font-mono hover:bg-indigo-500/20 transition-colors"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+          <span>view: {role}</span>
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+            <path d="M3 6h8l-2-2M13 10H5l2 2" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Topbar from './components/Topbar';
 import { useAuth } from './components/AuthProvider';
-import { getUserProfile, saveUserProfile, uploadProfilePhoto } from '@/backend/auth';
+import { useLanguage } from './components/LanguageProvider';
+import { getUserProfile, saveUserProfile, uploadProfilePhoto, signOut } from '@/backend/auth';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8);
@@ -80,21 +82,38 @@ function ProfilePreviewModal({ data, onClose }) {
 }
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const { t } = useLanguage();
+  const router = useRouter();
+  const isTeacher = role === 'teacher';
   const fileInputRef = useRef(null);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    try {
+      await signOut();
+      router.replace('/login');
+    } catch {
+      setSigningOut(false);
+    }
+  };
 
   const [photoURL, setPhotoURL] = useState('');
   const [photoUploading, setPhotoUploading] = useState(false);
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [headline, setHeadline] = useState('');
   const [price60, setPrice60] = useState('');
-  const [price90, setPrice90] = useState('');
   const [priceIntro, setPriceIntro] = useState(false);
   const [subjects, setSubjects] = useState([]);
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
   const [bio, setBio] = useState('');
   const [avail, setAvail] = useState(new Set());
+  const [grade, setGrade] = useState('');
+  const [struggles, setStruggles] = useState('');
+  const [expectations, setExpectations] = useState('');
 
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState('idle'); // idle | saved | error
@@ -107,14 +126,17 @@ export default function ProfilePage() {
       if (!profile) return;
       if (profile.photo_url) setPhotoURL(profile.photo_url);
       if (profile.name) setName(profile.name);
+      if (profile.phone) setPhone(profile.phone);
       if (profile.headline) setHeadline(profile.headline);
       if (profile.price_60) setPrice60(String(profile.price_60));
-      if (profile.price_90) setPrice90(String(profile.price_90));
       if (profile.price_intro !== undefined) setPriceIntro(profile.price_intro);
       if (profile.subjects) setSubjects(profile.subjects);
       if (profile.tags) setTags(profile.tags);
       if (profile.bio) setBio(profile.bio);
       if (profile.availability) setAvail(new Set(profile.availability));
+      if (profile.grade) setGrade(profile.grade);
+      if (profile.learning_struggles) setStruggles(profile.learning_struggles);
+      if (profile.expectations) setExpectations(profile.expectations);
     }).catch(() => setLoadError('Failed to load profile.'));
   }, [user]);
 
@@ -142,20 +164,29 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     if (!user) return;
+    if (!phone.trim()) {
+      setSaveStatus('error');
+      setLoadError(t('profile.phoneRequired'));
+      return;
+    }
+    setLoadError('');
     setSaving(true);
     setSaveStatus('idle');
     try {
       await saveUserProfile(user.id, {
         photo_url: photoURL,
         name,
+        phone: phone.trim(),
         headline,
         price_60: price60 ? Number(price60) : null,
-        price_90: price90 ? Number(price90) : null,
         price_intro: priceIntro,
         subjects,
         tags,
         bio,
         availability: [...avail],
+        grade: grade.trim() || null,
+        learning_struggles: struggles.trim() || null,
+        expectations: expectations.trim() || null,
       });
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 2000);
@@ -188,27 +219,41 @@ export default function ProfilePage() {
 
   return (
     <>
-      {previewOpen && <ProfilePreviewModal data={previewData} onClose={() => setPreviewOpen(false)} />}
-      <Topbar crumbs={['Profile Settings']} />
+      {previewOpen && isTeacher && <ProfilePreviewModal data={previewData} onClose={() => setPreviewOpen(false)} />}
+      <Topbar crumbs={[t('profile.crumb')]} />
       <div className="p-6 space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-mono text-slate-600 uppercase tracking-widest mb-1">Profile Settings</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-white">Profile Settings</h1>
-            <p className="text-slate-500 text-sm mt-1">Complete your profile so students can find and book you.</p>
+            <p className="text-xs font-mono text-slate-600 uppercase tracking-widest mb-1">{t('profile.kicker')}</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">{t('profile.title')}</h1>
+            <p className="text-slate-500 text-sm mt-1">
+              {isTeacher ? t('profile.subtitleTeacher') : t('profile.subtitleStudent')}
+            </p>
           </div>
           <div className="flex gap-2 items-center">
             {loadError && <p className="text-xs text-red-400">{loadError}</p>}
             <button
-              onClick={() => setPreviewOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-sm hover:bg-slate-800 transition-colors"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-sm hover:bg-rose-500/10 hover:text-rose-300 hover:border-rose-500/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
-                <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/>
-                <circle cx="8" cy="8" r="2"/>
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M6 3H3a1 1 0 00-1 1v8a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6"/>
               </svg>
-              Preview Profile
+              {signingOut ? t('common.saving') : t('nav.signOut')}
             </button>
+            {isTeacher && (
+              <button
+                onClick={() => setPreviewOpen(true)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-sm hover:bg-slate-800 transition-colors"
+              >
+                <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
+                  <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/>
+                  <circle cx="8" cy="8" r="2"/>
+                </svg>
+                {t('profile.preview')}
+              </button>
+            )}
             <button
               onClick={handleSave}
               disabled={saving}
@@ -220,27 +265,27 @@ export default function ProfilePage() {
               {saveStatus === 'saved' ? (
                 <>
                   <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 8.5L6.5 12 13 4.5"/></svg>
-                  Saved!
+                  {t('common.saved')}
                 </>
-              ) : saveStatus === 'error' ? 'Error — retry' : saving ? 'Saving…' : (
+              ) : saveStatus === 'error' ? t('common.error') : saving ? t('common.saving') : (
                 <>
                   <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 8.5L6.5 12 13 4.5"/></svg>
-                  Save Changes
+                  {t('common.save')}
                 </>
               )}
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-[1fr_260px] gap-4">
+        <div className={isTeacher ? 'grid grid-cols-[1fr_260px] gap-4' : 'max-w-2xl'}>
           <div className="space-y-4">
 
             {/* Basic info */}
             <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
-              <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-1">01 — Basic Information</p>
+              <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-1">{t('profile.basic')}</p>
               <div className="grid grid-cols-[120px_1fr] gap-5 mt-4">
                 <div>
-                  <p className="text-xs text-slate-500 mb-2">Photo</p>
+                  <p className="text-xs text-slate-500 mb-2">{t('profile.photo')}</p>
                   <div
                     className="w-[120px] h-[120px] rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-600 text-xs overflow-hidden cursor-pointer"
                     onClick={() => fileInputRef.current?.click()}
@@ -262,36 +307,98 @@ export default function ProfilePage() {
                     disabled={photoUploading}
                     className="mt-2 w-full text-xs px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    {photoUploading ? 'Uploading…' : 'Upload photo'}
+                    {photoUploading ? t('profile.uploading') : t('profile.upload')}
                   </button>
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1.5">Full name</label>
+                    <label className="block text-xs text-slate-500 mb-1.5">{t('profile.fullName')}</label>
                     <input
                       value={name}
                       onChange={e => setName(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors"
-                      placeholder="Your full name"
+                      placeholder={t('profile.fullNamePh')}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1.5">Headline</label>
+                    <label className="block text-xs text-slate-500 mb-1.5">
+                      {t('profile.phone')} <span className="text-rose-400">*</span>
+                    </label>
                     <input
-                      value={headline}
-                      onChange={e => setHeadline(e.target.value)}
+                      type="tel"
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      required
                       className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors"
-                      placeholder="e.g. Mathematics teacher · 8 years experience"
+                      placeholder={t('profile.phonePh')}
                     />
                   </div>
+                  {isTeacher && (
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1.5">{t('profile.headline')}</label>
+                      <input
+                        value={headline}
+                        onChange={e => setHeadline(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors"
+                        placeholder="e.g. Mathematics teacher · 8 years experience"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
+            {!isTeacher && (
+              <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+                <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-1">{t('profile.aboutStudent')}</p>
+                <p className="text-xs text-slate-500 mt-2 mb-4">
+                  {t('profile.aboutStudentSub')}
+                </p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1.5">{t('profile.grade')}</label>
+                    <input
+                      value={grade}
+                      onChange={e => setGrade(e.target.value.slice(0, 80))}
+                      placeholder={t('profile.gradePh')}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs text-slate-500">{t('profile.struggles')}</label>
+                      <span className="text-[10px] font-mono text-slate-600">{struggles.length} / 500</span>
+                    </div>
+                    <textarea
+                      rows={3}
+                      value={struggles}
+                      onChange={e => setStruggles(e.target.value.slice(0, 500))}
+                      placeholder={t('profile.strugglesPh')}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors resize-none"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs text-slate-500">{t('profile.expectations')}</label>
+                      <span className="text-[10px] font-mono text-slate-600">{expectations.length} / 500</span>
+                    </div>
+                    <textarea
+                      rows={3}
+                      value={expectations}
+                      onChange={e => setExpectations(e.target.value.slice(0, 500))}
+                      placeholder={t('profile.expectationsPh')}
+                      className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isTeacher && (<>
             {/* Pricing */}
             <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
               <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-4">02 — Pricing</p>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs text-slate-500 mb-1.5">Price per lesson (60 min)</label>
                   <div className="flex items-center bg-slate-800/60 border border-slate-700 rounded-lg overflow-hidden focus-within:border-indigo-500 transition-colors">
@@ -305,21 +412,6 @@ export default function ProfilePage() {
                       placeholder="0"
                     />
                     <span className="px-2.5 text-slate-600 text-xs font-mono">/ 60 min</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">90 min lesson</label>
-                  <div className="flex items-center bg-slate-800/60 border border-slate-700 rounded-lg overflow-hidden focus-within:border-indigo-500 transition-colors">
-                    <span className="px-2.5 text-slate-500 text-sm">€</span>
-                    <input
-                      type="number"
-                      min="0"
-                      value={price90}
-                      onChange={e => setPrice90(e.target.value)}
-                      className="flex-1 py-2 bg-transparent text-slate-100 text-sm outline-none min-w-0"
-                      placeholder="0"
-                    />
-                    <span className="px-2.5 text-slate-600 text-xs font-mono">/ 90 min</span>
                   </div>
                 </div>
                 <div>
@@ -403,10 +495,6 @@ export default function ProfilePage() {
             <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
               <div className="flex items-center justify-between mb-1">
                 <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">04 — Availability</p>
-                <div className="flex bg-slate-800 rounded-lg p-0.5">
-                  <button className="px-3 py-1 rounded-md text-xs text-white bg-slate-700">Week</button>
-                  <button className="px-3 py-1 rounded-md text-xs text-slate-400">Month</button>
-                </div>
               </div>
               <p className="text-xs text-slate-600 mb-4 mt-2">Click cells to mark when you're free. Students can only book in marked slots.</p>
               <div className="overflow-x-auto">
@@ -454,9 +542,11 @@ export default function ProfilePage() {
                 placeholder="Introduce yourself — your experience, teaching style, and what students can expect from your lessons."
               />
             </div>
+            </>)}
           </div>
 
-          {/* Live preview sidebar */}
+          {isTeacher && (
+          /* Live preview sidebar */
           <div>
             <div className="bg-slate-900 rounded-xl border border-slate-800 p-5 sticky top-4">
               <div className="flex items-center justify-between mb-4">
@@ -504,6 +594,7 @@ export default function ProfilePage() {
               </button>
             </div>
           </div>
+          )}
         </div>
       </div>
     </>

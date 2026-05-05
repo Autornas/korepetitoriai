@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from './AuthProvider';
 
 export default function ProtectedLayout({ children }) {
-  const { user, loading } = useAuth();
+  const { user, loading, profileLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -14,7 +14,10 @@ export default function ProtectedLayout({ children }) {
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  // Block render until session AND profile have resolved. Without this,
+  // role-aware UI (RoleGuard, Sidebar) sees role=null and either redirects
+  // valid users or flashes the wrong nav.
+  if (loading || (user && profileLoading)) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-950">
         <div className="w-5 h-5 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />

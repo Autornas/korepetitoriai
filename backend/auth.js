@@ -35,6 +35,12 @@ export async function loginWithGoogle(role = 'student') {
     provider: 'google',
     options: {
       redirectTo: `${window.location.origin}/dashboard`,
+      // Calendar scope so we can create Meet-enabled events for booked lessons.
+      scopes: 'https://www.googleapis.com/auth/calendar.events',
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent',
+      },
     },
   });
   if (error) throw error;

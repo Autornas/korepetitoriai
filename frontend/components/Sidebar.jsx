@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from './AuthProvider';
+import { useLanguage } from './LanguageProvider';
 import { signOut } from '@/backend/auth';
 
 const Icons = {
@@ -19,23 +20,22 @@ const Icons = {
 
 const sections = [
   {
-    label: 'OVERVIEW',
+    labelKey: 'nav.overview',
     items: [
-      { href: '/dashboard',      label: 'Dashboard',       num: '01', icon: 'Grid'   },
-      { href: '/messages',       label: 'Messages',        num: '02', icon: 'Bell'   },
+      { href: '/dashboard',      labelKey: 'nav.dashboard',      num: '01', icon: 'Grid'   },
+      { href: '/messages',       labelKey: 'nav.messages',       num: '02', icon: 'Bell'   },
     ],
   },
   {
-    label: 'TEACHING',
+    labelKey: 'nav.lessons',
     items: [
-      { href: '/lessons/create', label: 'New Lesson',       num: '03', icon: 'Plus'   },
-      { href: '/lessons',        label: 'My Lessons',       num: '04', icon: 'Video'  },
+      { href: '/lessons',        labelKey: 'nav.myLessons',      num: '03', icon: 'Video' },
     ],
   },
   {
-    label: 'DISCOVER',
+    labelKey: 'nav.discover',
     items: [
-      { href: '/tutors',         label: 'Find a Tutor',    num: '05', icon: 'Search', studentOnly: true },
+      { href: '/tutors',         labelKey: 'nav.findTutor',      num: '04', icon: 'Search', studentOnly: true },
     ],
   },
 ];
@@ -43,7 +43,8 @@ const sections = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router   = useRouter();
-  const { user, profile } = useAuth();
+  const { user, profile, role } = useAuth();
+  const { t } = useLanguage();
 
   const handleSignOut = async () => {
     await signOut();
@@ -55,9 +56,11 @@ export default function Sidebar() {
     ? displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
     : '?';
 
-  const isTeacher = profile?.role === 'teacher';
+  // Hide role-restricted items unless the role is known and matches.
+  // While role is still resolving (null), studentOnly items stay hidden so
+  // teachers never flash student UI on first paint.
   const visibleSections = sections
-    .map(sec => ({ ...sec, items: sec.items.filter(it => !(it.studentOnly && isTeacher)) }))
+    .map(sec => ({ ...sec, items: sec.items.filter(it => !it.studentOnly || role === 'student') }))
     .filter(sec => sec.items.length > 0);
 
   return (
@@ -74,9 +77,9 @@ export default function Sidebar() {
 
       <nav className="flex-1 px-3 py-4">
         {visibleSections.map((sec) => (
-          <div key={sec.label} className="mb-6">
+          <div key={sec.labelKey} className="mb-6">
             <div className="px-2 mb-2 text-[9px] font-semibold tracking-[0.1em] text-slate-600 uppercase">
-              {sec.label}
+              {t(sec.labelKey)}
             </div>
             <ul className="space-y-0.5">
               {sec.items.map((item) => {
@@ -95,7 +98,7 @@ export default function Sidebar() {
                       <span className={active ? 'text-indigo-400' : 'text-slate-600 group-hover:text-slate-400'}>
                         <Icon />
                       </span>
-                      <span className="flex-1">{item.label}</span>
+                      <span className="flex-1">{t(item.labelKey)}</span>
                       <span className="text-[10px] font-mono text-slate-700">{item.num}</span>
                     </Link>
                   </li>
@@ -109,7 +112,7 @@ export default function Sidebar() {
       <div className="flex items-center gap-2 px-3 py-3 border-t border-slate-800">
         <Link
           href="/profile"
-          title="Profile settings"
+          title={t('nav.profileSettings')}
           className={`flex items-center gap-3 flex-1 min-w-0 px-2 py-1.5 rounded-lg transition-colors ${
             pathname === '/profile' ? 'bg-slate-800' : 'hover:bg-slate-900'
           }`}
@@ -126,7 +129,7 @@ export default function Sidebar() {
         </Link>
         <button
           onClick={handleSignOut}
-          title="Sign out"
+          title={t('nav.signOut')}
           className="shrink-0 p-2 rounded-lg text-slate-600 hover:text-red-400 hover:bg-slate-900 transition-colors"
         >
           <Icons.Logout />

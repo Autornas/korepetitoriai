@@ -1,0 +1,257 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useLanguage } from './LanguageProvider';
+
+const JOIN_BEFORE_MS = 15 * 60 * 1000; // 15 min
+const JOIN_AFTER_MS  = 60 * 60 * 1000; // 60 min
+
+function meetUrlFor(lesson) {
+  // Prefer the Google Meet link generated when the lesson was booked.
+  // Fall back to a deterministic Jitsi room (same URL for both participants)
+  // when no Meet link is stored — e.g. student didn't sign in with Google.
+  if (lesson.meet_link) return lesson.meet_link;
+  return `https://meet.jit.si/Korepetitor-${lesson.id}`;
+}
+
+function formatCountdown(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const days  = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  const mins  = Math.floor((total % 3600) / 60);
+  const secs  = total % 60;
+  if (days > 0)  return `${days}d ${hours}h ${mins}m`;
+  if (hours > 0) return `${hours}h ${mins}m ${String(secs).padStart(2, '0')}s`;
+  return `${mins}m ${String(secs).padStart(2, '0')}s`;
+}
+
+function JoinSection({ lesson }) {
+  const { t } = useLanguage();
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (lesson.status === 'rejected') return null;
+
+  const startMs = new Date(`${lesson.date}T${lesson.time}`).getTime();
+  const diff = startMs - now;
+  const tooEarly = diff > JOIN_BEFORE_MS;
+  const ended = diff < -JOIN_AFTER_MS;
+  const active = !tooEarly && !ended;
+  const meetUrl = meetUrlFor(lesson);
+
+  return (
+    <div className="mt-4 mb-1 p-3 rounded-lg border border-slate-800 bg-slate-950/40">
+      <p className="text-[10px] font-mono uppercase tracking-widest text-slate-600 mb-2">
+        {t('lessonDetail.lessonRoom')}
+      </p>
+      {active ? (
+        <a
+          href={meetUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 transition-colors"
+        >
+          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+          {diff <= 0 ? t('lessonDetail.live') : t('lessonDetail.join')}
+        </a>
+      ) : ended ? (
+        <button
+          type="button"
+          disabled
+          className="flex items-center justify-center w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-500 text-sm cursor-not-allowed"
+        >
+          {t('lessonDetail.ended')}
+        </button>
+      ) : (
+        <div>
+          <button
+            type="button"
+            disabled
+            className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-sm cursor-not-allowed"
+          >
+            {t('lessonDetail.join')}
+          </button>
+          <p className="mt-2 text-center text-[11px] font-mono text-slate-500">
+            {t('lessonDetail.startsIn')} <span className="text-slate-300">{formatCountdown(diff)}</span>
+          </p>
+        </div>
+      )}
+      <p className="mt-2 text-[10px] font-mono text-slate-600 break-all">{meetUrl}</p>
+    </div>
+  );
+}
+
+export const STATUS_PILL = {
+  pending:  'bg-amber-500/20 border-amber-500/40 text-amber-300',
+  accepted: 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300',
+  rejected: 'bg-rose-500/20 border-rose-500/40 text-rose-300',
+};
+
+function Field({ label, children }) {
+  return (
+    <div>
+      <p className="text-[10px] font-mono uppercase tracking-widest text-slate-600 mb-1">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+export default function LessonDetailModal({ lesson, perspective, onClose }) {
+  const { t } = useLanguage();
+  // perspective: 'teacher' (viewing student) or 'student' (viewing tutor)
+  const p = perspective === 'teacher' ? lesson.student : lesson.teacher;
+  const initials = (p?.name ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+  const isStudentView = perspective === 'student';
+  const hasTutorInfo = isStudentView && (p?.bio || p?.subjects?.length || p?.tags?.length || p?.price_60 != null);
+  const hasStudentInfo = !isStudentView && (p?.grade || p?.learning_struggles || p?.expectations);
+  const noInfo = isStudentView ? !hasTutorInfo : !hasStudentInfo;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          title={t('lessonDetail.close')}
+          className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition-colors"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M3 3l10 10M13 3L3 13"/>
+          </svg>
+        </button>
+
+        <p className="text-[10px] font-mono uppercase tracking-widest text-slate-600 mb-3">
+          {t('lessonDetail.title')}
+        </p>
+
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 text-sm font-medium shrink-0 overflow-hidden">
+            {p?.photo_url
+              ? <img src={p.photo_url} alt="" className="w-full h-full object-cover" />
+              : initials}
+          </div>
+          <div className="min-w-0">
+            <p className="text-base font-semibold text-slate-100 truncate">{p?.name ?? '—'}</p>
+            {p?.headline && <p className="text-xs text-slate-500 truncate">{p.headline}</p>}
+          </div>
+          <span className={`ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] ${STATUS_PILL[lesson.status] ?? STATUS_PILL.pending}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-current" />
+            {lesson.status}
+          </span>
+        </div>
+
+        <JoinSection lesson={lesson} />
+
+        <div className="space-y-3 mt-4">
+          <Field label={t('lessonDetail.when')}>
+            <p className="text-sm text-slate-200 font-mono">
+              {lesson.date} · {lesson.time?.slice(0, 5)}
+            </p>
+          </Field>
+
+          {lesson.subject && (
+            <Field label={t('lessonDetail.subject')}>
+              <span className="inline-flex px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-[11px] text-indigo-300">
+                {lesson.subject}
+              </span>
+            </Field>
+          )}
+
+          {/* Teacher viewing student */}
+          {!isStudentView && p?.grade && (
+            <Field label={t('lessonDetail.grade')}>
+              <p className="text-sm text-slate-200">{p.grade}</p>
+            </Field>
+          )}
+
+          {lesson.notes && (
+            <Field label={t('dashboard.notes')}>
+              <p className="text-sm text-slate-300 whitespace-pre-wrap">{lesson.notes}</p>
+            </Field>
+          )}
+
+          {!isStudentView && p?.learning_struggles && (
+            <Field label={t('dashboard.struggles')}>
+              <p className="text-sm text-slate-300 whitespace-pre-wrap">{p.learning_struggles}</p>
+            </Field>
+          )}
+
+          {!isStudentView && p?.expectations && (
+            <Field label={t('dashboard.expects')}>
+              <p className="text-sm text-slate-300 whitespace-pre-wrap">{p.expectations}</p>
+            </Field>
+          )}
+
+          {/* Student viewing tutor */}
+          {isStudentView && p?.subjects?.length > 0 && (
+            <Field label={t('lessonDetail.subjects')}>
+              <div className="flex flex-wrap gap-1.5">
+                {p.subjects.filter(s => s?.name).map((s, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-[11px] text-indigo-300">
+                    {s.name}{s.grades ? ` · ${s.grades}` : ''}
+                  </span>
+                ))}
+              </div>
+            </Field>
+          )}
+
+          {isStudentView && p?.tags?.length > 0 && (
+            <Field label={t('lessonDetail.tags')}>
+              <div className="flex flex-wrap gap-1.5">
+                {p.tags.map((tag, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[11px] text-slate-300">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </Field>
+          )}
+
+          {isStudentView && p?.price_60 != null && (
+            <Field label={t('lessonDetail.price')}>
+              <p className="text-sm text-slate-200">€{p.price_60} <span className="text-xs text-slate-500">/ 60 min</span></p>
+            </Field>
+          )}
+
+          {isStudentView && p?.bio && (
+            <Field label={t('lessonDetail.aboutTutor')}>
+              <p className="text-sm text-slate-300 whitespace-pre-wrap">{p.bio}</p>
+            </Field>
+          )}
+
+          {p?.email && (
+            <Field label={t('lessonDetail.contact')}>
+              <a href={`mailto:${p.email}`} className="text-sm text-indigo-400 hover:text-indigo-300 break-all">
+                {p.email}
+              </a>
+            </Field>
+          )}
+
+          {p?.phone && (
+            <Field label={t('lessonDetail.phone')}>
+              <a href={`tel:${p.phone}`} className="text-sm text-indigo-400 hover:text-indigo-300">
+                {p.phone}
+              </a>
+            </Field>
+          )}
+
+          {noInfo && !lesson.notes && (
+            <p className="text-xs text-slate-500 italic">
+              {isStudentView ? t('lessonDetail.noTutorInfo') : t('lessonDetail.noStudentInfo')}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

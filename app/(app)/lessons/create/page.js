@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
-import CreateLessonPage from '@/frontend/CreateLessonPage';
-import RoleGuard from '@/frontend/components/RoleGuard';
+import CreateLessonPage from '@/features/lessons/CreateLessonPage';
+import RoleGuard from '@/components/RoleGuard';
 
 export const metadata = { title: 'Request Lesson — Korepetitor' };
 

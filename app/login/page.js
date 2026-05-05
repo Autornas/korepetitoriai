@@ -1,4 +1,4 @@
-import LoginPage from '@/frontend/LoginPage';
+import LoginPage from '@/features/auth/LoginPage';
 
 export const metadata = { title: 'Login — Korepetitor' };
 

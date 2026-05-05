@@ -1,5 +1,5 @@
-import Sidebar from '@/frontend/components/Sidebar';
-import ProtectedLayout from '@/frontend/components/ProtectedLayout';
+import Sidebar from '@/components/Sidebar';
+import ProtectedLayout from '@/components/ProtectedLayout';
 
 export default function AppLayout({ children }) {
   return (

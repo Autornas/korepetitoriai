@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useLanguage } from './LanguageProvider';
+import Link from 'next/link';
+import { useLanguage } from '@/components/LanguageProvider';
 
 const JOIN_BEFORE_MS = 15 * 60 * 1000; // 15 min
 const JOIN_AFTER_MS  = 60 * 60 * 1000; // 60 min
@@ -49,15 +50,23 @@ function JoinSection({ lesson }) {
         {t('lessonDetail.lessonRoom')}
       </p>
       {active ? (
-        <a
-          href={meetUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 transition-colors"
-        >
-          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-          {diff <= 0 ? t('lessonDetail.live') : t('lessonDetail.join')}
-        </a>
+        <div className="space-y-2">
+          <Link
+            href={`/lessons/${lesson.id}/call`}
+            className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 transition-colors"
+          >
+            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+            {diff <= 0 ? t('lessonDetail.live') : t('lessonDetail.join')}
+          </Link>
+          <a
+            href={meetUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs hover:bg-slate-700 transition-colors"
+          >
+            Open external Meet
+          </a>
+        </div>
       ) : ended ? (
         <button
           type="button"

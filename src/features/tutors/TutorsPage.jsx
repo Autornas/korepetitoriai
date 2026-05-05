@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import Topbar from './components/Topbar';
-import { listTeachers } from '@/backend/lessons';
+import Topbar from '@/components/Topbar';
+import { listTeachers } from '@/lib/lessons';
 
 export default function TutorsPage() {
   const [teachers, setTeachers] = useState([]);

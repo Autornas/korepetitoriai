@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from './AuthProvider';
 import { useLanguage } from './LanguageProvider';
-import { signOut } from '@/backend/auth';
+import { signOut } from '@/lib/auth';
 
 const Icons = {
   Grid:     () => <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>,
@@ -20,22 +20,16 @@ const Icons = {
 
 const sections = [
   {
-    labelKey: 'nav.overview',
     items: [
-      { href: '/dashboard',      labelKey: 'nav.dashboard',      num: '01', icon: 'Grid'   },
-      { href: '/messages',       labelKey: 'nav.messages',       num: '02', icon: 'Bell'   },
+      { href: '/dashboard',      labelKey: 'nav.dashboard',      icon: 'Grid'   },
+      { href: '/messages',       labelKey: 'nav.messages',       icon: 'Bell'   },
+      { href: '/lessons',        labelKey: 'nav.myLessons',      icon: 'Video' },
     ],
   },
+  
   {
-    labelKey: 'nav.lessons',
     items: [
-      { href: '/lessons',        labelKey: 'nav.myLessons',      num: '03', icon: 'Video' },
-    ],
-  },
-  {
-    labelKey: 'nav.discover',
-    items: [
-      { href: '/tutors',         labelKey: 'nav.findTutor',      num: '04', icon: 'Search', studentOnly: true },
+      { href: '/tutors',         labelKey: 'nav.findTutor',      icon: 'Search', studentOnly: true },
     ],
   },
 ];
@@ -70,8 +64,9 @@ export default function Sidebar() {
           K
         </div>
         <div>
-          <div className="text-white font-semibold text-sm tracking-tight">Korepetitor</div>
-          <div className="text-slate-600 text-[10px] font-mono">v 0.1</div>
+          <div className="text-white font-semibold text-3xl tracking-tight">
+            Koris
+          </div>
         </div>
       </div>
 

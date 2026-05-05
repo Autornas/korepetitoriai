@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Topbar from './components/Topbar';
-import { useAuth } from './components/AuthProvider';
-import { useLanguage } from './components/LanguageProvider';
-import { listTeachers, createLessonRequest, setLessonMeetLink } from '@/backend/lessons';
-import { createMeetEvent } from '@/backend/google';
+import Topbar from '@/components/Topbar';
+import { useAuth } from '@/components/AuthProvider';
+import { useLanguage } from '@/components/LanguageProvider';
+import { listTeachers, createLessonRequest, setLessonMeetLink } from '@/lib/lessons';
+import { createMeetEvent } from '@/lib/google';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 

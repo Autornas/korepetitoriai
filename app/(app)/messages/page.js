@@ -1,4 +1,4 @@
-import MessagesPage from '@/frontend/MessagesPage';
+import MessagesPage from '@/features/messages/MessagesPage';
 
 export const metadata = { title: 'Messages — Korepetitor' };
 

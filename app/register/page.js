@@ -1,4 +1,4 @@
-import RegisterPage from '@/frontend/RegisterPage';
+import RegisterPage from '@/features/auth/RegisterPage';
 
 export const metadata = { title: 'Sign Up — Korepetitor' };
 

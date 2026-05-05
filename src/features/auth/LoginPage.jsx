@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
-import { loginUser, loginWithGoogle } from '@/backend/auth';
-import { useAuth } from './components/AuthProvider';
+import { loginUser, loginWithGoogle } from '@/lib/auth';
+import { useAuth } from '@/components/AuthProvider';
 
 function InputField({ label, id, type = "text", value, onChange, error, placeholder, autoComplete, children }) {
   const [focused, setFocused] = useState(false);

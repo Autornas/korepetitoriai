@@ -1,4 +1,4 @@
-import LessonsPage from '@/frontend/LessonsPage';
+import LessonsPage from '@/features/lessons/LessonsPage';
 
 export const metadata = { title: 'My Lessons — Korepetitor' };
 

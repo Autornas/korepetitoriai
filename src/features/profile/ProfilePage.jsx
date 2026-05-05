@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Topbar from './components/Topbar';
-import { useAuth } from './components/AuthProvider';
-import { useLanguage } from './components/LanguageProvider';
-import { getUserProfile, saveUserProfile, uploadProfilePhoto, signOut } from '@/backend/auth';
+import Topbar from '@/components/Topbar';
+import { useAuth } from '@/components/AuthProvider';
+import { useLanguage } from '@/components/LanguageProvider';
+import { getUserProfile, saveUserProfile, uploadProfilePhoto, signOut } from '@/lib/auth';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8);

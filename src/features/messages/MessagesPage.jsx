@@ -1,4 +1,4 @@
-import Topbar from './components/Topbar';
+import Topbar from '@/components/Topbar';
 
 const tabs = ['All', 'Lessons', 'Students', 'Payments', 'System'];
 

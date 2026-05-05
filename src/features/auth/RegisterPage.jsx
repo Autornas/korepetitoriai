@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
-import { registerUser, loginWithGoogle } from '@/backend/auth';
-import { useAuth } from './components/AuthProvider';
+import { registerUser, loginWithGoogle } from '@/lib/auth';
+import { useAuth } from '@/components/AuthProvider';
 
 const ROLES = { TEACHER: "teacher", STUDENT: "student" };
 

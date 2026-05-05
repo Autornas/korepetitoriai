@@ -1,5 +1,5 @@
-import TutorsPage from '@/frontend/TutorsPage';
-import RoleGuard from '@/frontend/components/RoleGuard';
+import TutorsPage from '@/features/tutors/TutorsPage';
+import RoleGuard from '@/components/RoleGuard';
 
 export const metadata = { title: 'Find a Tutor — Korepetitor' };
 

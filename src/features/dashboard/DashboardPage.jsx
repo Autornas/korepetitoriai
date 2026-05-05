@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import Topbar from './components/Topbar';
-import { useAuth } from './components/AuthProvider';
-import { useLanguage } from './components/LanguageProvider';
-import LessonDetailModal from './components/LessonDetailModal';
+import Topbar from '@/components/Topbar';
+import { useAuth } from '@/components/AuthProvider';
+import { useLanguage } from '@/components/LanguageProvider';
+import LessonDetailModal from '@/features/lessons/LessonDetailModal';
 import {
   listLessonsForStudent,
   listLessonsForTeacher,
   updateLessonStatus,
-} from '@/backend/lessons';
+} from '@/lib/lessons';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const HOURS = Array.from({ length: 11 }, (_, i) => i + 8);

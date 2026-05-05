@@ -1,17 +1,3 @@
-// Google Calendar API helpers.
-//
-// The browser holds a Google OAuth access token (Supabase `provider_token`)
-// after the student signs in via Google. We use it to create a Calendar
-// event with `conferenceData.createRequest`, which makes Google attach a
-// Meet link to the event automatically.
-//
-// Setup required outside this file:
-//   1. Enable "Google Calendar API" in your Google Cloud project.
-//   2. In Supabase → Authentication → Providers → Google, set the scope to
-//      include `https://www.googleapis.com/auth/calendar.events`.
-//   3. Make sure the student logs in via Google (email/password users have
-//      no provider_token, so this call will fail gracefully).
-
 const CALENDAR_ENDPOINT =
   'https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1';
 

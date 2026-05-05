@@ -1,4 +1,4 @@
-import ProfilePage from '@/frontend/ProfilePage';
+import ProfilePage from '@/features/profile/ProfilePage';
 
 export const metadata = { title: 'Profile Settings — Korepetitor' };
 

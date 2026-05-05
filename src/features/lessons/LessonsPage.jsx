@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import Topbar from './components/Topbar';
-import { useAuth } from './components/AuthProvider';
-import { useLanguage } from './components/LanguageProvider';
-import LessonDetailModal, { STATUS_PILL } from './components/LessonDetailModal';
+import Topbar from '@/components/Topbar';
+import { useAuth } from '@/components/AuthProvider';
+import { useLanguage } from '@/components/LanguageProvider';
+import LessonDetailModal, { STATUS_PILL } from './LessonDetailModal';
 import {
   listLessonsForStudent,
   listLessonsForTeacher,
   updateLessonStatus,
-} from '@/backend/lessons';
+} from '@/lib/lessons';
 
 const TABS = ['All', 'Pending', 'Accepted', 'Rejected'];
 

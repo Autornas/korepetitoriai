@@ -139,7 +139,9 @@ export default function CreateLessonPage() {
 
   const [teachers, setTeachers] = useState([]);
   const [loadingTeachers, setLoadingTeachers] = useState(true);
-  const [teacherId, setTeacherId] = useState(params.get('teacherId') ?? '');
+  const presetTeacherId = params.get('teacherId') ?? '';
+  const [teacherId, setTeacherId] = useState(presetTeacherId);
+  const tutorPreselected = Boolean(presetTeacherId);
   const [subject, setSubject] = useState('');
   const [date, setDate] = useState('');
   const [hour, setHour] = useState('');
@@ -245,25 +247,43 @@ export default function CreateLessonPage() {
         )}
 
         <div className="grid grid-cols-[1fr_300px] gap-4">
-          <div className="space-y-4">
-            <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5 space-y-4">
+          <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5 space-y-6">
+            <div className="space-y-4">
               <p className="text-[10px] font-mono text-[#8A7556] uppercase tracking-widest">{t('create.tutor')}</p>
-              <div>
-                <label className="block text-xs text-[#8A7556] mb-1.5">{t('create.chooseTutor')}</label>
-                <select
-                  value={teacherId}
-                  onChange={e => setTeacherId(e.target.value)}
-                  disabled={loadingTeachers}
-                  className="w-full px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors"
-                >
-                  <option value="">{loadingTeachers ? t('common.loading') : t('create.selectTutor')}</option>
-                  {teachers.map(tt => (
-                    <option key={tt.id} value={tt.id}>
-                      {tt.name ?? '—'} {tt.headline ? `· ${tt.headline}` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {tutorPreselected ? (
+                teacher ? (
+                  <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8]">
+                    <div className="w-9 h-9 rounded-full bg-[#F4ECDF] border border-[#DCC9A8] overflow-hidden flex items-center justify-center text-[#5A4A38] text-xs font-medium shrink-0">
+                      {teacher.photo_url
+                        ? <img src={teacher.photo_url} alt={teacher.name ?? ''} className="w-full h-full object-cover" />
+                        : (teacher.name ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[#2A1F14] truncate">{teacher.name ?? '—'}</p>
+                      {teacher.headline && <p className="text-[11px] text-[#8A7556] truncate">{teacher.headline}</p>}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-[#8A7556]">{t('common.loading')}</p>
+                )
+              ) : (
+                <div>
+                  <label className="block text-xs text-[#8A7556] mb-1.5">{t('create.chooseTutor')}</label>
+                  <select
+                    value={teacherId}
+                    onChange={e => setTeacherId(e.target.value)}
+                    disabled={loadingTeachers}
+                    className="w-full px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors"
+                  >
+                    <option value="">{loadingTeachers ? t('common.loading') : t('create.selectTutor')}</option>
+                    {teachers.map(tt => (
+                      <option key={tt.id} value={tt.id}>
+                        {tt.name ?? '—'} {tt.headline ? `· ${tt.headline}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {teacher && (
                 <div>
@@ -288,7 +308,9 @@ export default function CreateLessonPage() {
               )}
             </div>
 
-            <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
+            <hr className="border-[#EADFCB]" />
+
+            <div>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-[10px] font-mono text-[#8A7556] uppercase tracking-widest">{t('create.dateTime')}</p>
                 {teacher && availSet.size > 0 && (
@@ -320,7 +342,9 @@ export default function CreateLessonPage() {
               )}
             </div>
 
-            <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
+            <hr className="border-[#EADFCB]" />
+
+            <div>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-[10px] font-mono text-[#8A7556] uppercase tracking-widest">{t('create.notes')}</p>
                 <span className="text-xs font-mono text-[#8A7556]">{notes.length} / 500</span>

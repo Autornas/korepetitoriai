@@ -58,7 +58,7 @@ export default function Sidebar() {
     .filter(sec => sec.items.length > 0);
 
   return (
-    <aside className="w-60 shrink-0 bg-[#FFFDF8] border-r border-[#EADFCB] flex flex-col overflow-y-auto">
+    <aside className="w-60 h-full shrink-0 bg-[#FFFDF8] border-r border-[#EADFCB] flex flex-col overflow-y-auto">
       <div className="flex items-center gap-3 px-5 py-5 border-b border-[#EADFCB]">
         <div className="w-8 h-8 rounded-lg bg-[#C8654A] flex items-center justify-center text-white font-bold text-sm shrink-0">
           K

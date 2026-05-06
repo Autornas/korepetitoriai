@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Topbar from '@/components/Topbar';
 import { useAuth } from '@/components/AuthProvider';
+import { useLanguage } from '@/components/LanguageProvider';
 import {
   listConversationPartners,
   listMessagesWith,
@@ -49,6 +50,7 @@ function Avatar({ url, name, size = 40 }) {
 
 export default function MessagesPage() {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const initialPartner = searchParams.get('with');
 
@@ -75,11 +77,11 @@ export default function MessagesPage() {
         return list;
       });
     } catch (e) {
-      setError(e.message ?? 'Failed to load conversations.');
+      setError(e.message ?? t('messages.failedLoadConvs'));
     } finally {
       setPartnersLoaded(true);
     }
-  }, [user, initialPartner]);
+  }, [user, initialPartner, t]);
 
   const refreshMessages = useCallback(async () => {
     if (!user || !activeId) return;
@@ -91,9 +93,9 @@ export default function MessagesPage() {
         markConversationRead(user.id, activeId).catch(() => {});
       }
     } catch (e) {
-      setError(e.message ?? 'Failed to load messages.');
+      setError(e.message ?? t('messages.failedLoadMessages'));
     }
-  }, [user, activeId]);
+  }, [user, activeId, t]);
 
   useEffect(() => { refreshPartners(); }, [refreshPartners]);
 
@@ -141,9 +143,9 @@ export default function MessagesPage() {
       setDraft(body);
       const code = err?.code;
       if (code === '42501' || /row-level security/i.test(err?.message ?? '')) {
-        setError('You can only message people you share a lesson with.');
+        setError(t('messages.rlsError'));
       } else {
-        setError(err.message ?? 'Failed to send message.');
+        setError(err.message ?? t('messages.failedSend'));
       }
     } finally {
       setSending(false);
@@ -159,13 +161,13 @@ export default function MessagesPage() {
 
   return (
     <>
-      <Topbar crumbs={['Messages']} />
+      <Topbar crumbs={[t('messages.crumb')]} />
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-xs font-mono text-[#8A7556] uppercase tracking-widest mb-1">Messages</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-[#2A1F14]">Conversations</h1>
-            <p className="text-[#8A7556] text-sm mt-1">Talk to the tutors and students you share lessons with.</p>
+            <p className="text-xs font-mono text-[#8A7556] uppercase tracking-widest mb-1">{t('messages.kicker')}</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-[#2A1F14]">{t('messages.title')}</h1>
+            <p className="text-[#8A7556] text-sm mt-1">{t('messages.subtitle')}</p>
           </div>
         </div>
 
@@ -179,7 +181,7 @@ export default function MessagesPage() {
           {/* Partner list */}
           <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] overflow-hidden flex flex-col">
             <div className="px-4 py-3 border-b border-[#EADFCB]">
-              <p className="text-[10px] font-mono uppercase tracking-widest text-[#8A7556]">Conversations</p>
+              <p className="text-[10px] font-mono uppercase tracking-widest text-[#8A7556]">{t('messages.listHeader')}</p>
             </div>
             <div className="flex-1 overflow-y-auto">
               {(authLoading || !partnersLoaded) ? (
@@ -189,8 +191,8 @@ export default function MessagesPage() {
               ) : partners.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center text-[#8A7556]">
                   <svg width="32" height="32" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1"><path d="M2 4a1 1 0 011-1h10a1 1 0 011 1v6a1 1 0 01-1 1H6l-3 3v-3H3a1 1 0 01-1-1V4z"/></svg>
-                  <p className="text-xs mt-2">No conversations yet.</p>
-                  <p className="text-[10px] mt-1">Book or accept a lesson to start chatting.</p>
+                  <p className="text-xs mt-2">{t('messages.noConversations')}</p>
+                  <p className="text-[10px] mt-1">{t('messages.startHint')}</p>
                 </div>
               ) : (
                 <ul>
@@ -206,12 +208,12 @@ export default function MessagesPage() {
                           <Avatar url={p.photo_url} name={p.name} />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="text-sm font-medium text-[#2A1F14] truncate">{p.name ?? 'Unknown'}</p>
+                              <p className="text-sm font-medium text-[#2A1F14] truncate">{p.name ?? t('messages.unknown')}</p>
                               <span className="text-[10px] font-mono text-[#8A7556] shrink-0">{formatPreviewTime(last?.created_at)}</span>
                             </div>
                             <div className="flex items-center justify-between gap-2 mt-0.5">
                               <p className="text-xs text-[#8A7556] truncate">
-                                {last ? last.body : <span className="italic">No messages yet</span>}
+                                {last ? last.body : <span className="italic">{t('messages.noMessagesYetShort')}</span>}
                               </p>
                               {p.unread > 0 && (
                                 <span className="shrink-0 min-w-[18px] h-[18px] px-1.5 rounded-full bg-[#C8654A] text-white text-[10px] font-medium flex items-center justify-center">
@@ -234,14 +236,14 @@ export default function MessagesPage() {
             {!activeId ? (
               <div className="flex-1 flex flex-col items-center justify-center text-[#8A7556]">
                 <svg width="40" height="40" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1"><path d="M2 4a1 1 0 011-1h10a1 1 0 011 1v6a1 1 0 01-1 1H6l-3 3v-3H3a1 1 0 01-1-1V4z"/></svg>
-                <p className="text-sm mt-3">Select a conversation</p>
+                <p className="text-sm mt-3">{t('messages.selectConversation')}</p>
               </div>
             ) : (
               <>
                 <div className="px-4 py-3 border-b border-[#EADFCB] flex items-center gap-3">
                   <Avatar url={active?.photo_url} name={active?.name} size={36} />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[#2A1F14] truncate">{active?.name ?? 'Unknown'}</p>
+                    <p className="text-sm font-semibold text-[#2A1F14] truncate">{active?.name ?? t('messages.unknown')}</p>
                     {active?.headline && <p className="text-[11px] text-[#8A7556] truncate">{active.headline}</p>}
                   </div>
                 </div>
@@ -249,7 +251,7 @@ export default function MessagesPage() {
                 <div ref={scrollerRef} className="flex-1 overflow-y-auto p-4 space-y-2">
                   {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-[#8A7556]">
-                      <p className="text-sm">No messages yet — say hi.</p>
+                      <p className="text-sm">{t('messages.sayHi')}</p>
                     </div>
                   ) : (
                     messages.map(m => {
@@ -277,7 +279,7 @@ export default function MessagesPage() {
                     onChange={e => setDraft(e.target.value.slice(0, 2000))}
                     onKeyDown={onKeyDown}
                     rows={2}
-                    placeholder="Write a message…"
+                    placeholder={t('messages.placeholder')}
                     className="flex-1 px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors resize-none"
                   />
                   <button
@@ -285,7 +287,7 @@ export default function MessagesPage() {
                     disabled={sending || !draft.trim()}
                     className="px-4 py-2.5 rounded-lg bg-[#C8654A] text-white text-sm font-medium hover:bg-[#B0533A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {sending ? 'Sending…' : 'Send'}
+                    {sending ? t('messages.sending') : t('messages.send')}
                   </button>
                 </form>
               </>

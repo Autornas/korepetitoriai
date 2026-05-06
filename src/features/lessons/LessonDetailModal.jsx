@@ -64,7 +64,7 @@ function JoinSection({ lesson }) {
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg bg-[#F4ECDF] border border-[#DCC9A8] text-[#5A4A38] text-xs hover:bg-[#EBDFC6] transition-colors"
           >
-            Open external Meet
+            {t('lessonDetail.openExternalMeet')}
           </a>
         </div>
       ) : ended ? (
@@ -156,7 +156,7 @@ export default function LessonDetailModal({ lesson, perspective, onClose }) {
           </div>
           <span className={`ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] ${STATUS_PILL[lesson.status] ?? STATUS_PILL.pending}`}>
             <span className="w-1.5 h-1.5 rounded-full bg-current" />
-            {lesson.status}
+            {t(`status.${lesson.status ?? 'pending'}`)}
           </span>
         </div>
 
@@ -170,7 +170,7 @@ export default function LessonDetailModal({ lesson, perspective, onClose }) {
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
               <path d="M2 4a1 1 0 011-1h10a1 1 0 011 1v6a1 1 0 01-1 1H6l-3 3v-3H3a1 1 0 01-1-1V4z"/>
             </svg>
-            Message {p?.name?.split(' ')[0] ?? (isStudentView ? 'tutor' : 'student')}
+            {t('lessonDetail.message')} {p?.name?.split(' ')[0] ?? t(isStudentView ? 'lessonDetail.tutorWord' : 'lessonDetail.studentWord')}
           </Link>
         )}
 

@@ -190,14 +190,14 @@ export default function VideoCall({ lessonId, userId }) {
 
   return (
     <div className="flex flex-col h-full bg-[#FFFDF8]">
-      <div className="flex-1 grid grid-rows-[2fr_1fr] gap-2 p-3 min-h-0">
-        <div className="relative bg-[#FFFDF8] rounded-lg overflow-hidden border border-[#EADFCB] min-h-0">
+      <div className="flex-1 flex flex-col gap-2 p-3 min-h-0 overflow-y-auto">
+        <div className="relative bg-[#FFFDF8] rounded-lg overflow-hidden border border-[#EADFCB] w-full aspect-[4/3] shrink-0">
           <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
           <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 text-[10px] text-[#5A4A38]">
             Peer · {status}
           </span>
         </div>
-        <div className="relative bg-[#FFFDF8] rounded-lg overflow-hidden border border-[#EADFCB] min-h-0">
+        <div className="relative bg-[#FFFDF8] rounded-lg overflow-hidden border border-[#EADFCB] w-full aspect-[4/3] shrink-0">
           <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
           <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 text-[10px] text-[#5A4A38]">You</span>
         </div>

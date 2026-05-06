@@ -62,7 +62,7 @@ export default function CallRoomPage({ lessonId }) {
 
   return (
     <div className="flex flex-col h-screen bg-[#FFFDF8]">
-      <header className="flex items-center justify-between px-5 py-3 border-b border-[#EADFCB] bg-[#FFFDF8] shrink-0">
+      <header className="flex items-center justify-between pl-14 pr-5 py-3 border-b border-[#EADFCB] bg-[#FFFDF8] shrink-0">
         <div>
           <p className="text-[10px] font-mono uppercase tracking-widest text-[#8A7556]">Lesson Room</p>
           <h1 className="text-sm font-semibold text-[#2A1F14]">
@@ -76,7 +76,7 @@ export default function CallRoomPage({ lessonId }) {
           Leave
         </Link>
       </header>
-      <div className="grid grid-cols-1 md:grid-cols-2 flex-1 min-h-0">
+      <div className="grid grid-cols-1 md:grid-cols-[20%_1fr] flex-1 min-h-0">
         <div className="border-b md:border-b-0 md:border-r border-[#EADFCB] min-h-0 min-w-0">
           <VideoCall lessonId={lesson.id} userId={user.id} />
         </div>

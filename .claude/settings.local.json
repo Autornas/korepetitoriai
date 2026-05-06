@@ -10,7 +10,9 @@
       "Bash(npm run *)",
       "Bash(git mv *)",
       "Bash(rmdir backend/migrations)",
-      "Bash(rmdir backend *)"
+      "Bash(rmdir backend *)",
+      "Bash(npx --yes esbuild --bundle=false --loader:.jsx=jsx src/components/LanguageProvider.jsx src/features/tutors/TutorsPage.jsx src/features/lessons/LessonsPage.jsx src/features/messages/MessagesPage.jsx src/features/lessons/LessonDetailModal.jsx --outdir=/tmp/_check)",
+      "Bash(npx esbuild *)"
     ]
   }
 }

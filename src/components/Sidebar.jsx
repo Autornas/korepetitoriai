@@ -72,10 +72,12 @@ export default function Sidebar() {
 
       <nav className="flex-1 px-3 py-4">
         {visibleSections.map((sec) => (
-          <div key={sec.labelKey} className="mb-6">
-            <div className="px-2 mb-2 text-[9px] font-semibold tracking-[0.1em] text-[#8A7556] uppercase">
-              {t(sec.labelKey)}
-            </div>
+          <div key={sec.items[0]?.href ?? sec.labelKey} className="mb-6">
+            {sec.labelKey && (
+              <div className="px-2 mb-2 text-[9px] font-semibold tracking-[0.1em] text-[#8A7556] uppercase">
+                {t(sec.labelKey)}
+              </div>
+            )}
             <ul className="space-y-0.5">
               {sec.items.map((item) => {
                 const Icon   = Icons[item.icon];

@@ -12,10 +12,29 @@ import {
   updateLessonStatus,
 } from '../../../app/lib/lessons';
 
-const TABS = ['All', 'Pending', 'Accepted', 'Rejected'];
+const TABS = [
+  { key: 'All',      labelKey: 'lessons.tabAll' },
+  { key: 'Pending',  labelKey: 'lessons.tabPending' },
+  { key: 'Accepted', labelKey: 'lessons.tabAccepted' },
+  { key: 'Rejected', labelKey: 'lessons.tabRejected' },
+];
+
+const STATUS_LABEL_KEY = {
+  pending:  'status.pending',
+  accepted: 'status.accepted',
+  rejected: 'status.rejected',
+};
+
+const EMPTY_TAB_KEY = {
+  All:      'lessons.noLessons',
+  Pending:  'lessons.noPending',
+  Accepted: 'lessons.noAccepted',
+  Rejected: 'lessons.noRejected',
+};
 
 export default function LessonsPage() {
   const { user, role } = useAuth();
+  const { t, lang } = useLanguage();
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('All');
@@ -24,7 +43,6 @@ export default function LessonsPage() {
   const [selectedId, setSelectedId] = useState(null);
 
   const isTeacher = role === 'teacher';
-  const counterpartLabel = isTeacher ? 'Student' : 'Tutor';
 
   const refresh = useCallback(async () => {
     if (!user || !role) return;
@@ -36,11 +54,11 @@ export default function LessonsPage() {
         : await listLessonsForStudent(user.id);
       setLessons(data);
     } catch (e) {
-      setError(e.message ?? 'Failed to load lessons.');
+      setError(e.message ?? t('lessons.failedLoad'));
     } finally {
       setLoading(false);
     }
-  }, [user, role, isTeacher]);
+  }, [user, role, isTeacher, t]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -55,7 +73,7 @@ export default function LessonsPage() {
       await updateLessonStatus(id, status);
       setLessons(ls => ls.map(l => l.id === id ? { ...l, status } : l));
     } catch (e) {
-      setError(e.message ?? 'Failed to update lesson.');
+      setError(e.message ?? t('lessons.failedUpdate'));
     } finally {
       setBusyId(null);
     }
@@ -72,22 +90,22 @@ export default function LessonsPage() {
           onClose={() => setSelectedId(null)}
         />
       )}
-      <Topbar crumbs={['My Lessons']} />
+      <Topbar crumbs={[t('lessons.crumb')]} />
       <div className="p-6 space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-mono text-[#8A7556] uppercase tracking-widest mb-1">My Lessons</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-[#2A1F14]">My Lessons</h1>
+            <p className="text-xs font-mono text-[#8A7556] uppercase tracking-widest mb-1">{t('lessons.kicker')}</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-[#2A1F14]">{t('lessons.title')}</h1>
             <p className="text-[#8A7556] text-sm mt-1">
               {isTeacher
-                ? 'Incoming lesson requests and your scheduled sessions.'
-                : 'Track every lesson request you have sent.'}
+                ? t('lessons.subtitleTeacher')
+                : t('lessons.subtitleStudent')}
             </p>
           </div>
           {!isTeacher && (
             <Link href="/tutors" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#C8654A] text-white text-sm hover:bg-[#B0533A] transition-colors">
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="7" cy="7" r="4"/><path d="M10 10l3 3"/></svg>
-              Find a Tutor
+              {t('lessons.findTutor')}
             </Link>
           )}
         </div>
@@ -97,17 +115,17 @@ export default function LessonsPage() {
         )}
 
         <div className="flex gap-1 border-b border-[#EADFCB]">
-          {TABS.map(t => (
+          {TABS.map(({ key, labelKey }) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={key}
+              onClick={() => setTab(key)}
               className={`px-4 py-2.5 text-sm border-b-2 transition-colors ${
-                tab === t
+                tab === key
                   ? 'border-[#C8654A] text-[#B0533A]'
                   : 'border-transparent text-[#8A7556] hover:text-[#5A4A38]'
               }`}
             >
-              {t}
+              {t(labelKey)}
             </button>
           ))}
         </div>
@@ -121,11 +139,11 @@ export default function LessonsPage() {
             <div className="flex flex-col items-center justify-center py-16 text-[#8A7556] bg-[#FFFDF8] rounded-2xl border border-[#EADFCB]">
               <svg width="36" height="36" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6h11M5.5 2v3M10.5 2v3"/></svg>
               <p className="text-sm mt-3">
-                {tab === 'All' ? 'No lessons yet' : `No ${tab.toLowerCase()} lessons`}
+                {t(EMPTY_TAB_KEY[tab] ?? 'lessons.noLessons')}
               </p>
               {!isTeacher && tab === 'All' && (
                 <Link href="/tutors" className="mt-4 px-4 py-2 rounded-lg bg-[#C8654A] text-white text-sm hover:bg-[#B0533A] transition-colors">
-                  Find a Tutor
+                  {t('lessons.findTutor')}
                 </Link>
               )}
             </div>
@@ -134,10 +152,11 @@ export default function LessonsPage() {
               {filtered.map(l => {
                 const counterpart = isTeacher ? l.student : l.teacher;
                 const STATUS_DOT = { pending: '#D89A3A', accepted: '#7A8C5C', rejected: '#B85A4F' };
+                const dateLocale = lang === 'lt' ? 'lt-LT' : 'en-US';
                 const dt = new Date(`${l.date}T00:00:00`);
-                const month = dt.toLocaleDateString('en-US', { month: 'short' });
+                const month = dt.toLocaleDateString(dateLocale, { month: 'short' });
                 const day = dt.getDate();
-                const weekday = dt.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+                const weekday = dt.toLocaleDateString(dateLocale, { weekday: 'short' }).toUpperCase();
                 return (
                   <li
                     key={l.id}
@@ -162,10 +181,10 @@ export default function LessonsPage() {
                     {/* Body */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <p className="text-base font-semibold text-[#2A1F14] truncate">{counterpart?.name ?? 'Unknown'}</p>
+                        <p className="text-base font-semibold text-[#2A1F14] truncate">{counterpart?.name ?? t('lessons.unknown')}</p>
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] ${STATUS_PILL[l.status] ?? STATUS_PILL.pending}`}>
                           <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                          {l.status}
+                          {t(STATUS_LABEL_KEY[l.status] ?? 'status.pending')}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -188,14 +207,14 @@ export default function LessonsPage() {
                             onClick={() => handleStatus(l.id, 'accepted')}
                             className="px-3 py-2 rounded-lg bg-[#7A8C5C] text-white text-xs font-medium hover:bg-[#677A4D] transition-colors disabled:opacity-50"
                           >
-                            Accept
+                            {t('lessons.accept')}
                           </button>
                           <button
                             disabled={busyId === l.id}
                             onClick={() => handleStatus(l.id, 'rejected')}
                             className="px-3 py-2 rounded-lg bg-transparent border border-[#DCC9A8] text-[#5A4A38] text-xs hover:bg-[#F4D9D5] hover:text-[#7A3A33] transition-colors disabled:opacity-50"
                           >
-                            Reject
+                            {t('lessons.reject')}
                           </button>
                         </>
                       )}
@@ -205,7 +224,7 @@ export default function LessonsPage() {
                           onClick={() => handleStatus(l.id, 'rejected')}
                           className="px-3 py-2 rounded-lg bg-transparent border border-[#DCC9A8] text-[#5A4A38] text-xs hover:bg-[#F4D9D5] hover:text-[#7A3A33] transition-colors disabled:opacity-50"
                         >
-                          Cancel
+                          {t('lessons.cancel')}
                         </button>
                       )}
                       {isTeacher && l.status === 'rejected' && (
@@ -214,12 +233,12 @@ export default function LessonsPage() {
                           onClick={() => handleStatus(l.id, 'accepted')}
                           className="px-3 py-2 rounded-lg bg-transparent border border-[#DCC9A8] text-[#5A4A38] text-xs hover:bg-[#677A4D]/10 hover:text-[#4F5F36] transition-colors disabled:opacity-50"
                         >
-                          Accept
+                          {t('lessons.accept')}
                         </button>
                       )}
                       {!isTeacher && l.status === 'accepted' && (
                         <button className="px-3 py-2 rounded-lg bg-[#C8654A] text-white text-xs font-medium hover:bg-[#B0533A] transition-colors">
-                          Join lesson
+                          {t('lessons.join')}
                         </button>
                       )}
                     </div>

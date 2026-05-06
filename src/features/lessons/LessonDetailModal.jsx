@@ -119,6 +119,7 @@ export default function LessonDetailModal({ lesson, perspective, onClose }) {
   const hasTutorInfo = isStudentView && (p?.bio || p?.subjects?.length || p?.tags?.length || p?.price_60 != null);
   const hasStudentInfo = !isStudentView && (p?.grade || p?.learning_struggles || p?.expectations);
   const noInfo = isStudentView ? !hasTutorInfo : !hasStudentInfo;
+  const counterpartId = isStudentView ? lesson.teacher_id : lesson.student_id;
 
   return (
     <div
@@ -160,6 +161,18 @@ export default function LessonDetailModal({ lesson, perspective, onClose }) {
         </div>
 
         <JoinSection lesson={lesson} />
+
+        {counterpartId && lesson.status !== 'rejected' && (
+          <Link
+            href={`/messages?with=${counterpartId}`}
+            className="mt-3 flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-[#FFFDF8] border border-[#DCC9A8] text-[#5A4A38] text-sm hover:bg-[#F4ECDF] transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <path d="M2 4a1 1 0 011-1h10a1 1 0 011 1v6a1 1 0 01-1 1H6l-3 3v-3H3a1 1 0 01-1-1V4z"/>
+            </svg>
+            Message {p?.name?.split(' ')[0] ?? (isStudentView ? 'tutor' : 'student')}
+          </Link>
+        )}
 
         <div className="space-y-3 mt-4">
           <Field label={t('lessonDetail.when')}>

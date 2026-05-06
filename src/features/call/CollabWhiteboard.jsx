@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Excalidraw, getSceneVersion } from '@excalidraw/excalidraw';
 import '@excalidraw/excalidraw/index.css';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../../app/lib/supabase';
 
 const THROTTLE_MS = 80;
 
@@ -130,7 +130,7 @@ export default function CollabWhiteboard({ lessonId, userId }) {
     <div className="relative w-full h-full">
       <button
         onClick={handleClear}
-        className="absolute top-3 right-3 z-10 px-3 py-1.5 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-xs hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/40 transition-colors"
+        className="absolute top-3 right-3 z-10 px-3 py-1.5 rounded-md bg-[#F4ECDF] border border-[#DCC9A8] text-[#2A1F14] text-xs hover:bg-[#F4D9D5] hover:text-[#7A3A33] hover:border-[#E0A89F] transition-colors"
       >
         Clear board
       </button>

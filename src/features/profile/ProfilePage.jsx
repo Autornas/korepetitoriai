@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Topbar from '@/components/Topbar';
 import { useAuth } from '@/components/AuthProvider';
 import { useLanguage } from '@/components/LanguageProvider';
-import { getUserProfile, saveUserProfile, uploadProfilePhoto, signOut } from '@/lib/auth';
+import { getUserProfile, saveUserProfile, uploadProfilePhoto, signOut } from '../../../app/lib/auth';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8);
@@ -20,29 +20,29 @@ function ProfilePreviewModal({ data, onClose }) {
       onClick={onClose}
     >
       <div
-        className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-sm p-6 relative"
+        className="bg-[#FFFDF8] border border-[#EADFCB] rounded-2xl shadow-2xl w-full max-w-sm p-6 relative"
         onClick={e => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition-colors"
+          className="absolute top-4 right-4 text-[#8A7556] hover:text-[#5A4A38] transition-colors"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 3l10 10M13 3L3 13"/>
           </svg>
         </button>
-        <div className="aspect-video bg-slate-800 rounded-lg border border-slate-700 overflow-hidden mb-4">
+        <div className="aspect-video bg-[#F4ECDF] rounded-lg border border-[#DCC9A8] overflow-hidden mb-4">
           {data.photoURL
             ? <img src={data.photoURL} alt="Profile" className="w-full h-full object-cover" />
-            : <div className="w-full h-full flex items-center justify-center text-slate-600 text-xs">photo preview</div>
+            : <div className="w-full h-full flex items-center justify-center text-[#8A7556] text-xs">photo preview</div>
           }
         </div>
-        <p className="text-lg font-semibold text-white">{data.name || 'Your name'}</p>
-        <p className="text-xs text-slate-400 mt-1">{data.headline || 'Headline appears here'}</p>
+        <p className="text-lg font-semibold text-[#2A1F14]">{data.name || 'Your name'}</p>
+        <p className="text-xs text-[#5A4A38] mt-1">{data.headline || 'Headline appears here'}</p>
         {data.subjects.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-3">
             {data.subjects.map((s, i) => (
-              <span key={i} className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-xs text-indigo-300">
+              <span key={i} className="px-2 py-0.5 rounded-full bg-[#F6E4DA] border border-[#E8B7A2] text-xs text-[#B0533A]">
                 {s.name}
               </span>
             ))}
@@ -51,29 +51,29 @@ function ProfilePreviewModal({ data, onClose }) {
         {data.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">
             {data.tags.map((t, i) => (
-              <span key={i} className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-400">
+              <span key={i} className="px-2 py-0.5 rounded-full bg-[#F4ECDF] border border-[#DCC9A8] text-xs text-[#5A4A38]">
                 {t}
               </span>
             ))}
           </div>
         )}
         {data.bio && (
-          <p className="text-sm text-slate-400 mt-3 leading-relaxed line-clamp-4">{data.bio}</p>
+          <p className="text-sm text-[#5A4A38] mt-3 leading-relaxed line-clamp-4">{data.bio}</p>
         )}
-        <hr className="border-slate-800 my-4" />
+        <hr className="border-[#EADFCB] my-4" />
         <div className="flex justify-between items-end">
           <div>
-            <p className="text-[10px] text-slate-500 uppercase tracking-wide">Price</p>
-            <p className="text-xl font-semibold text-white mt-1">
+            <p className="text-[10px] text-[#8A7556] uppercase tracking-wide">Price</p>
+            <p className="text-xl font-semibold text-[#2A1F14] mt-1">
               {data.price60 ? `€${data.price60}` : '—'}
-              <span className="text-xs font-normal text-slate-500"> / 60 min</span>
+              <span className="text-xs font-normal text-[#8A7556]"> / 60 min</span>
             </p>
           </div>
           {data.priceIntro && (
-            <span className="text-xs text-emerald-400 font-medium">Intro lesson free</span>
+            <span className="text-xs text-[#677A4D] font-medium">Intro lesson free</span>
           )}
         </div>
-        <button className="mt-4 w-full py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 transition-colors">
+        <button className="mt-4 w-full py-2.5 rounded-lg bg-[#C8654A] text-white text-sm font-medium hover:bg-[#B0533A] transition-colors">
           Book a Lesson
         </button>
       </div>
@@ -224,9 +224,9 @@ export default function ProfilePage() {
       <div className="p-6 space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-mono text-slate-600 uppercase tracking-widest mb-1">{t('profile.kicker')}</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-white">{t('profile.title')}</h1>
-            <p className="text-slate-500 text-sm mt-1">
+            <p className="text-xs font-mono text-[#8A7556] uppercase tracking-widest mb-1">{t('profile.kicker')}</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-[#2A1F14]">{t('profile.title')}</h1>
+            <p className="text-[#8A7556] text-sm mt-1">
               {isTeacher ? t('profile.subtitleTeacher') : t('profile.subtitleStudent')}
             </p>
           </div>
@@ -235,7 +235,7 @@ export default function ProfilePage() {
             <button
               onClick={handleSignOut}
               disabled={signingOut}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-sm hover:bg-rose-500/10 hover:text-rose-300 hover:border-rose-500/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#FFFDF8] border border-[#EADFCB] text-[#5A4A38] text-sm hover:bg-[#F4D9D5] hover:text-[#7A3A33] hover:border-[#B85A4F]/30 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M6 3H3a1 1 0 00-1 1v8a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6"/>
@@ -245,7 +245,7 @@ export default function ProfilePage() {
             {isTeacher && (
               <button
                 onClick={() => setPreviewOpen(true)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 text-sm hover:bg-slate-800 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#FFFDF8] border border-[#EADFCB] text-[#5A4A38] text-sm hover:bg-[#F4ECDF] transition-colors"
               >
                 <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
                   <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/>
@@ -258,9 +258,9 @@ export default function ProfilePage() {
               onClick={handleSave}
               disabled={saving}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed
-                ${saveStatus === 'saved' ? 'bg-emerald-600 text-white hover:bg-emerald-500' :
-                  saveStatus === 'error' ? 'bg-red-600 text-white hover:bg-red-500' :
-                  'bg-indigo-600 text-white hover:bg-indigo-500'}`}
+                ${saveStatus === 'saved' ? 'bg-[#7A8C5C] text-white hover:bg-[#677A4D]' :
+                  saveStatus === 'error' ? 'bg-[#B85A4F] text-white hover:bg-[#B85A4F]/85' :
+                  'bg-[#C8654A] text-white hover:bg-[#B0533A]'}`}
             >
               {saveStatus === 'saved' ? (
                 <>
@@ -281,13 +281,13 @@ export default function ProfilePage() {
           <div className="space-y-4">
 
             {/* Basic info */}
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
-              <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-1">{t('profile.basic')}</p>
+            <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
+              <p className="text-[10px] font-mono text-[#8A7556] uppercase tracking-widest mb-1">{t('profile.basic')}</p>
               <div className="grid grid-cols-[120px_1fr] gap-5 mt-4">
                 <div>
-                  <p className="text-xs text-slate-500 mb-2">{t('profile.photo')}</p>
+                  <p className="text-xs text-[#8A7556] mb-2">{t('profile.photo')}</p>
                   <div
-                    className="w-[120px] h-[120px] rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-600 text-xs overflow-hidden cursor-pointer"
+                    className="w-[120px] h-[120px] rounded-full bg-[#F4ECDF] border border-[#DCC9A8] flex items-center justify-center text-[#8A7556] text-xs overflow-hidden cursor-pointer"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     {photoURL
@@ -305,41 +305,41 @@ export default function ProfilePage() {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={photoUploading}
-                    className="mt-2 w-full text-xs px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="mt-2 w-full text-xs px-2 py-1.5 rounded-lg bg-[#F4ECDF] border border-[#DCC9A8] text-[#5A4A38] hover:bg-[#EBDFC6] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {photoUploading ? t('profile.uploading') : t('profile.upload')}
                   </button>
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1.5">{t('profile.fullName')}</label>
+                    <label className="block text-xs text-[#8A7556] mb-1.5">{t('profile.fullName')}</label>
                     <input
                       value={name}
                       onChange={e => setName(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors"
+                      className="w-full px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors"
                       placeholder={t('profile.fullNamePh')}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1.5">
-                      {t('profile.phone')} <span className="text-rose-400">*</span>
+                    <label className="block text-xs text-[#8A7556] mb-1.5">
+                      {t('profile.phone')} <span className="text-[#7A3A33]">*</span>
                     </label>
                     <input
                       type="tel"
                       value={phone}
                       onChange={e => setPhone(e.target.value)}
                       required
-                      className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors"
+                      className="w-full px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors"
                       placeholder={t('profile.phonePh')}
                     />
                   </div>
                   {isTeacher && (
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1.5">{t('profile.headline')}</label>
+                      <label className="block text-xs text-[#8A7556] mb-1.5">{t('profile.headline')}</label>
                       <input
                         value={headline}
                         onChange={e => setHeadline(e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors"
+                        className="w-full px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors"
                         placeholder="e.g. Mathematics teacher · 8 years experience"
                       />
                     </div>
@@ -349,45 +349,45 @@ export default function ProfilePage() {
             </div>
 
             {!isTeacher && (
-              <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
-                <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-1">{t('profile.aboutStudent')}</p>
-                <p className="text-xs text-slate-500 mt-2 mb-4">
+              <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
+                <p className="text-[10px] font-mono text-[#8A7556] uppercase tracking-widest mb-1">{t('profile.aboutStudent')}</p>
+                <p className="text-xs text-[#8A7556] mt-2 mb-4">
                   {t('profile.aboutStudentSub')}
                 </p>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1.5">{t('profile.grade')}</label>
+                    <label className="block text-xs text-[#8A7556] mb-1.5">{t('profile.grade')}</label>
                     <input
                       value={grade}
                       onChange={e => setGrade(e.target.value.slice(0, 80))}
                       placeholder={t('profile.gradePh')}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors"
+                      className="w-full px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors"
                     />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs text-slate-500">{t('profile.struggles')}</label>
-                      <span className="text-[10px] font-mono text-slate-600">{struggles.length} / 500</span>
+                      <label className="block text-xs text-[#8A7556]">{t('profile.struggles')}</label>
+                      <span className="text-[10px] font-mono text-[#8A7556]">{struggles.length} / 500</span>
                     </div>
                     <textarea
                       rows={3}
                       value={struggles}
                       onChange={e => setStruggles(e.target.value.slice(0, 500))}
                       placeholder={t('profile.strugglesPh')}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors resize-none"
+                      className="w-full px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors resize-none"
                     />
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs text-slate-500">{t('profile.expectations')}</label>
-                      <span className="text-[10px] font-mono text-slate-600">{expectations.length} / 500</span>
+                      <label className="block text-xs text-[#8A7556]">{t('profile.expectations')}</label>
+                      <span className="text-[10px] font-mono text-[#8A7556]">{expectations.length} / 500</span>
                     </div>
                     <textarea
                       rows={3}
                       value={expectations}
                       onChange={e => setExpectations(e.target.value.slice(0, 500))}
                       placeholder={t('profile.expectationsPh')}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors resize-none"
+                      className="w-full px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors resize-none"
                     />
                   </div>
                 </div>
@@ -396,30 +396,30 @@ export default function ProfilePage() {
 
             {isTeacher && (<>
             {/* Pricing */}
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
-              <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mb-4">02 — Pricing</p>
+            <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
+              <p className="text-[10px] font-mono text-[#8A7556] uppercase tracking-widest mb-4">02 — Pricing</p>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">Price per lesson (60 min)</label>
-                  <div className="flex items-center bg-slate-800/60 border border-slate-700 rounded-lg overflow-hidden focus-within:border-indigo-500 transition-colors">
-                    <span className="px-2.5 text-slate-500 text-sm">€</span>
+                  <label className="block text-xs text-[#8A7556] mb-1.5">Price per lesson (60 min)</label>
+                  <div className="flex items-center bg-[#F4ECDF]/60 border border-[#DCC9A8] rounded-lg overflow-hidden focus-within:border-[#C8654A] transition-colors">
+                    <span className="px-2.5 text-[#8A7556] text-sm">€</span>
                     <input
                       type="number"
                       min="0"
                       value={price60}
                       onChange={e => setPrice60(e.target.value)}
-                      className="flex-1 py-2 bg-transparent text-slate-100 text-sm outline-none min-w-0"
+                      className="flex-1 py-2 bg-transparent text-[#2A1F14] text-sm outline-none min-w-0"
                       placeholder="0"
                     />
-                    <span className="px-2.5 text-slate-600 text-xs font-mono">/ 60 min</span>
+                    <span className="px-2.5 text-[#8A7556] text-xs font-mono">/ 60 min</span>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">Intro lesson</label>
+                  <label className="block text-xs text-[#8A7556] mb-1.5">Intro lesson</label>
                   <button
                     type="button"
                     onClick={() => setPriceIntro(p => !p)}
-                    className={`w-full py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${priceIntro ? 'bg-emerald-600/20 border-emerald-500/40 text-emerald-400' : 'bg-slate-800/60 border-slate-700 text-slate-500 hover:border-slate-600'}`}
+                    className={`w-full py-2 px-3 rounded-lg border text-sm font-medium transition-colors ${priceIntro ? 'bg-[#7A8C5C]/20 border-[#BDC79A] text-[#677A4D]' : 'bg-[#F4ECDF]/60 border-[#DCC9A8] text-[#8A7556] hover:border-[#C8654A]'}`}
                   >
                     {priceIntro ? 'Free intro ✓' : 'Free intro?'}
                   </button>
@@ -428,19 +428,19 @@ export default function ProfilePage() {
             </div>
 
             {/* Subjects */}
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+            <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">03 — Subjects & Modules</p>
+                <p className="text-[10px] font-mono text-[#8A7556] uppercase tracking-widest">03 — Subjects & Modules</p>
                 <button
                   onClick={addSubject}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-xs hover:bg-slate-700 transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F4ECDF] border border-[#DCC9A8] text-[#5A4A38] text-xs hover:bg-[#EBDFC6] transition-colors"
                 >
                   <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 3v10M3 8h10"/></svg>
                   Add subject
                 </button>
               </div>
               {subjects.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-6 text-slate-600">
+                <div className="flex flex-col items-center justify-center py-6 text-[#8A7556]">
                   <p className="text-xs">No subjects added yet</p>
                 </div>
               ) : (
@@ -451,17 +451,17 @@ export default function ProfilePage() {
                         value={s.name}
                         onChange={e => updateSubject(i, 'name', e.target.value)}
                         placeholder="Subject (e.g. Mathematics)"
-                        className="flex-1 px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors"
+                        className="flex-1 px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors"
                       />
                       <input
                         value={s.grades}
                         onChange={e => updateSubject(i, 'grades', e.target.value)}
                         placeholder="Grades (e.g. 9–12)"
-                        className="w-36 px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-100 text-sm outline-none focus:border-indigo-500 transition-colors"
+                        className="w-36 px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors"
                       />
                       <button
                         onClick={() => removeSubject(i)}
-                        className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                        className="p-2 rounded-lg text-[#8A7556] hover:text-[#7A3A33] hover:bg-[#F4D9D5] transition-colors"
                       >
                         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
                       </button>
@@ -470,12 +470,12 @@ export default function ProfilePage() {
                 </div>
               )}
               <div className="mt-4">
-                <p className="text-xs text-slate-500 mb-2">Topic tags</p>
+                <p className="text-xs text-[#8A7556] mb-2">Topic tags</p>
                 <div className="flex flex-wrap gap-1.5">
                   {tags.map(t => (
-                    <span key={t} className="flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-300">
+                    <span key={t} className="flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full bg-[#F4ECDF] border border-[#DCC9A8] text-xs text-[#5A4A38]">
                       {t}
-                      <button onClick={() => removeTag(t)} className="text-slate-500 hover:text-red-400 transition-colors">
+                      <button onClick={() => removeTag(t)} className="text-[#8A7556] hover:text-[#7A3A33] transition-colors">
                         <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 3l10 10M13 3L3 13"/></svg>
                       </button>
                     </span>
@@ -485,27 +485,27 @@ export default function ProfilePage() {
                     onChange={e => setTagInput(e.target.value)}
                     onKeyDown={handleTagKeyDown}
                     placeholder="+ add tag, press Enter"
-                    className="px-2 py-0.5 text-xs bg-transparent text-slate-400 outline-none placeholder-slate-600 w-36"
+                    className="px-2 py-0.5 text-xs bg-transparent text-[#5A4A38] outline-none placeholder-[#B5A07F] w-36"
                   />
                 </div>
               </div>
             </div>
 
             {/* Availability */}
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+            <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
               <div className="flex items-center justify-between mb-1">
-                <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">04 — Availability</p>
+                <p className="text-[10px] font-mono text-[#8A7556] uppercase tracking-widest">04 — Availability</p>
               </div>
-              <p className="text-xs text-slate-600 mb-4 mt-2">Click cells to mark when you're free. Students can only book in marked slots.</p>
+              <p className="text-xs text-[#8A7556] mb-4 mt-2">Click cells to mark when you're free. Students can only book in marked slots.</p>
               <div className="overflow-x-auto">
                 <div className="grid" style={{ gridTemplateColumns: '40px repeat(7, 1fr)', minWidth: 480 }}>
                   <div className="h-7" />
                   {DAYS.map(d => (
-                    <div key={d} className="h-7 text-[10px] font-mono text-slate-500 flex items-center justify-center">{d}</div>
+                    <div key={d} className="h-7 text-[10px] font-mono text-[#8A7556] flex items-center justify-center">{d}</div>
                   ))}
                   {HOURS.map(h => (
                     <React.Fragment key={h}>
-                      <div className="text-[9px] font-mono text-slate-600 flex items-center justify-end pr-1.5" style={{ height: 28 }}>
+                      <div className="text-[9px] font-mono text-[#8A7556] flex items-center justify-end pr-1.5" style={{ height: 28 }}>
                         {String(h).padStart(2, '0')}:00
                       </div>
                       {DAYS.map((_, d) => {
@@ -513,7 +513,7 @@ export default function ProfilePage() {
                         const on = avail.has(k);
                         return (
                           <button key={`c-${h}-${d}`} onClick={() => toggleAvail(d, h)}
-                            className={`border border-slate-800 transition-colors ${on ? 'bg-indigo-500/30 hover:bg-indigo-500/40' : 'hover:bg-slate-800'}`}
+                            className={`border border-[#EADFCB] transition-colors ${on ? 'bg-[#C8654A]/30 hover:bg-[#B0533A]/40' : 'hover:bg-[#F4ECDF]'}`}
                             style={{ height: 28 }} />
                         );
                       })}
@@ -521,23 +521,23 @@ export default function ProfilePage() {
                   ))}
                 </div>
               </div>
-              <div className="flex gap-5 mt-3 text-xs text-slate-500">
-                <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded-sm bg-indigo-500/40" />Free</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded-sm bg-slate-800 border border-slate-700" />Busy</span>
-                <span className="ml-auto font-mono text-slate-600 text-[10px]">Timezone: Europe/Vilnius</span>
+              <div className="flex gap-5 mt-3 text-xs text-[#8A7556]">
+                <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded-sm bg-[#C8654A]/40" />Free</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-2 rounded-sm bg-[#F4ECDF] border border-[#DCC9A8]" />Busy</span>
+                <span className="ml-auto font-mono text-[#8A7556] text-[10px]">Timezone: Europe/Vilnius</span>
               </div>
             </div>
 
             {/* Bio */}
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+            <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">05 — About You</p>
-                <span className="text-xs font-mono text-slate-500">{bio.length} / 800</span>
+                <p className="text-[10px] font-mono text-[#8A7556] uppercase tracking-widest">05 — About You</p>
+                <span className="text-xs font-mono text-[#8A7556]">{bio.length} / 800</span>
               </div>
               <textarea
                 value={bio}
                 onChange={e => setBio(e.target.value.slice(0, 800))}
-                className="w-full px-3 py-3 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors resize-none"
+                className="w-full px-3 py-3 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors resize-none"
                 rows={7}
                 placeholder="Introduce yourself — your experience, teaching style, and what students can expect from your lessons."
               />
@@ -548,10 +548,10 @@ export default function ProfilePage() {
           {isTeacher && (
           /* Live preview sidebar */
           <div>
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5 sticky top-4">
+            <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5 sticky top-4">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-white">Public Preview</h2>
-                <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-full bg-slate-800 border border-slate-700 text-slate-400">
+                <h2 className="text-sm font-semibold text-[#2A1F14]">Public Preview</h2>
+                <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-full bg-[#F4ECDF] border border-[#DCC9A8] text-[#5A4A38]">
                   <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
                     <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/>
                     <circle cx="8" cy="8" r="2"/>
@@ -559,37 +559,37 @@ export default function ProfilePage() {
                   live
                 </span>
               </div>
-              <div className="aspect-video bg-slate-800 rounded-lg border border-slate-700 overflow-hidden mb-4">
+              <div className="aspect-video bg-[#F4ECDF] rounded-lg border border-[#DCC9A8] overflow-hidden mb-4">
                 {photoURL
                   ? <img src={photoURL} alt="Profile" className="w-full h-full object-cover" />
-                  : <div className="w-full h-full flex items-center justify-center text-slate-600 text-xs">photo · 16:9</div>
+                  : <div className="w-full h-full flex items-center justify-center text-[#8A7556] text-xs">photo · 16:9</div>
                 }
               </div>
-              <p className="text-base font-semibold text-white">{name || <span className="text-slate-500">Your name</span>}</p>
-              <p className="text-xs text-slate-400 mt-1">{headline || <span className="text-slate-600">Headline appears here</span>}</p>
+              <p className="text-base font-semibold text-[#2A1F14]">{name || <span className="text-[#8A7556]">Your name</span>}</p>
+              <p className="text-xs text-[#5A4A38] mt-1">{headline || <span className="text-[#8A7556]">Headline appears here</span>}</p>
               {subjects.length > 0 ? (
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   {subjects.filter(s => s.name).map((s, i) => (
-                    <span key={i} className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-xs text-indigo-300">{s.name}</span>
+                    <span key={i} className="px-2 py-0.5 rounded-full bg-[#F6E4DA] border border-[#E8B7A2] text-xs text-[#B0533A]">{s.name}</span>
                   ))}
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-1.5 mt-3">
-                  <span className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-xs text-slate-600">No subjects yet</span>
+                  <span className="px-2 py-0.5 rounded-full bg-[#F4ECDF] border border-[#DCC9A8] text-xs text-[#8A7556]">No subjects yet</span>
                 </div>
               )}
-              <hr className="border-slate-800 my-4" />
+              <hr className="border-[#EADFCB] my-4" />
               <div className="flex justify-between items-end">
                 <div>
-                  <p className="text-[10px] text-slate-500 uppercase tracking-wide">Price</p>
-                  <p className="text-lg font-semibold text-white mt-1">
-                    {price60 ? `€${price60}` : <span className="text-slate-600">—</span>}
-                    <span className="text-xs font-normal text-slate-500"> / 60 min</span>
+                  <p className="text-[10px] text-[#8A7556] uppercase tracking-wide">Price</p>
+                  <p className="text-lg font-semibold text-[#2A1F14] mt-1">
+                    {price60 ? `€${price60}` : <span className="text-[#8A7556]">—</span>}
+                    <span className="text-xs font-normal text-[#8A7556]"> / 60 min</span>
                   </p>
                 </div>
-                {priceIntro && <span className="text-xs text-emerald-400 font-medium">Intro free</span>}
+                {priceIntro && <span className="text-xs text-[#677A4D] font-medium">Intro free</span>}
               </div>
-              <button className="mt-4 w-full py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-500 transition-colors">
+              <button className="mt-4 w-full py-2.5 rounded-lg bg-[#C8654A] text-white text-sm font-medium hover:bg-[#B0533A] transition-colors">
                 Book a Lesson
               </button>
             </div>

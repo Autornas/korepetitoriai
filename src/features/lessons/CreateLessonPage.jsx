@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Topbar from '@/components/Topbar';
 import { useAuth } from '@/components/AuthProvider';
 import { useLanguage } from '@/components/LanguageProvider';
-import { listTeachers, createLessonRequest, setLessonMeetLink } from '@/lib/lessons';
-import { createMeetEvent } from '@/lib/google';
+import { listTeachers, createLessonRequest, setLessonMeetLink } from '../../../app/lib/lessons';
+import { createMeetEvent } from '../../../app/lib/google';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -37,18 +37,18 @@ function SlotCalendarHeader({ weekStart, onShift, prevTitle, nextTitle }) {
         type="button"
         onClick={() => onShift(-1)}
         title={prevTitle}
-        className="flex items-center px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700 transition-colors"
+        className="flex items-center px-2 py-1.5 rounded-lg bg-[#F4ECDF] border border-[#DCC9A8] text-[#5A4A38] hover:bg-[#EBDFC6] transition-colors"
       >
         <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M10 4l-4 4 4 4"/></svg>
       </button>
-      <span className="text-[11px] font-mono text-slate-400">
+      <span className="text-[11px] font-mono text-[#5A4A38]">
         {dates[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {dates[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
       </span>
       <button
         type="button"
         onClick={() => onShift(1)}
         title={nextTitle}
-        className="flex items-center px-2 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:bg-slate-700 transition-colors"
+        className="flex items-center px-2 py-1.5 rounded-lg bg-[#F4ECDF] border border-[#DCC9A8] text-[#5A4A38] hover:bg-[#EBDFC6] transition-colors"
       >
         <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M6 4l4 4-4 4"/></svg>
       </button>
@@ -78,15 +78,15 @@ function SlotCalendar({ availSet, weekStart, selectedDate, selectedHour, onSelec
   })();
 
   return (
-    <div className="rounded-lg border border-slate-800 overflow-hidden">
+    <div className="rounded-lg border border-[#EADFCB] overflow-hidden">
       <div className="grid" style={{ gridTemplateColumns: '52px repeat(7, 1fr)' }}>
-        <div className="border-b border-slate-800 h-11 bg-slate-950/40" />
+        <div className="border-b border-[#EADFCB] h-11 bg-[#F4ECDF]" />
         {dates.map((d, i) => {
           const isToday = ymd(d) === todayKey;
           return (
-            <div key={i} className="border-b border-slate-800 border-l h-11 flex flex-col items-center justify-center bg-slate-950/40">
-              <span className="text-[10px] text-slate-600">{DAYS[i]}</span>
-              <span className={`text-xs font-semibold mt-0.5 w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-indigo-600 text-white' : 'text-slate-300'}`}>
+            <div key={i} className="border-b border-[#EADFCB] border-l h-11 flex flex-col items-center justify-center bg-[#F4ECDF]">
+              <span className="text-[10px] text-[#8A7556]">{DAYS[i]}</span>
+              <span className={`text-xs font-semibold mt-0.5 w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-[#C8654A] text-white' : 'text-[#5A4A38]'}`}>
                 {d.getDate()}
               </span>
             </div>
@@ -95,7 +95,7 @@ function SlotCalendar({ availSet, weekStart, selectedDate, selectedHour, onSelec
 
         {hours.map(h => (
           <div key={`row-${h}`} className="contents">
-            <div className="border-t border-slate-800 text-[10px] font-mono text-slate-600 flex items-start justify-end pr-2 pt-1.5" style={{ height: 36 }}>
+            <div className="border-t border-[#EADFCB] text-[10px] font-mono text-[#8A7556] flex items-start justify-end pr-2 pt-1.5" style={{ height: 36 }}>
               {String(h).padStart(2, '0')}:00
             </div>
             {dates.map((d, di) => {
@@ -113,12 +113,12 @@ function SlotCalendar({ availSet, weekStart, selectedDate, selectedHour, onSelec
                   disabled={!enabled}
                   onClick={() => onSelect(dKey, String(h).padStart(2, '0'))}
                   title={enabled ? `${dKey} ${String(h).padStart(2,'0')}:00` : ''}
-                  className={`border-t border-l border-slate-800 transition-colors ${
+                  className={`border-t border-l border-[#EADFCB] transition-colors ${
                     isSelected
-                      ? 'bg-indigo-600 hover:bg-indigo-500'
+                      ? 'bg-[#C8654A] hover:bg-[#B0533A]'
                       : enabled
-                        ? 'bg-indigo-500/15 hover:bg-indigo-500/30 cursor-pointer'
-                        : 'bg-slate-950/20'
+                        ? 'bg-[#F6E4DA] hover:bg-[#B0533A]/30 cursor-pointer'
+                        : 'bg-[#FFFDF8]/20'
                   }`}
                   style={{ height: 36 }}
                 />
@@ -226,14 +226,14 @@ export default function CreateLessonPage() {
       <form onSubmit={handleSubmit} className="p-6 space-y-6">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-mono text-slate-600 uppercase tracking-widest mb-1">{t('create.kicker')}</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-white">{t('create.title')}</h1>
-            <p className="text-slate-500 text-sm mt-1">{t('create.subtitle')}</p>
+            <p className="text-xs font-mono text-[#8A7556] uppercase tracking-widest mb-1">{t('create.kicker')}</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-[#2A1F14]">{t('create.title')}</h1>
+            <p className="text-[#8A7556] text-sm mt-1">{t('create.subtitle')}</p>
           </div>
           <button
             type="submit"
             disabled={!isValid || submitting}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#C8654A] text-white text-sm hover:bg-[#B0533A] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 8.5L6.5 12 13 4.5"/></svg>
             {submitting ? t('create.sending') : t('create.send')}
@@ -241,20 +241,20 @@ export default function CreateLessonPage() {
         </div>
 
         {error && (
-          <div className="px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">{error}</div>
+          <div className="px-4 py-3 rounded-lg bg-[#F4D9D5] border border-[#E0A89F] text-red-400 text-sm">{error}</div>
         )}
 
         <div className="grid grid-cols-[1fr_300px] gap-4">
           <div className="space-y-4">
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5 space-y-4">
-              <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">{t('create.tutor')}</p>
+            <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5 space-y-4">
+              <p className="text-[10px] font-mono text-[#8A7556] uppercase tracking-widest">{t('create.tutor')}</p>
               <div>
-                <label className="block text-xs text-slate-500 mb-1.5">{t('create.chooseTutor')}</label>
+                <label className="block text-xs text-[#8A7556] mb-1.5">{t('create.chooseTutor')}</label>
                 <select
                   value={teacherId}
                   onChange={e => setTeacherId(e.target.value)}
                   disabled={loadingTeachers}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors"
+                  className="w-full px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors"
                 >
                   <option value="">{loadingTeachers ? t('common.loading') : t('create.selectTutor')}</option>
                   {teachers.map(tt => (
@@ -267,16 +267,16 @@ export default function CreateLessonPage() {
 
               {teacher && (
                 <div>
-                  <label className="block text-xs text-slate-500 mb-1.5">
-                    {t('create.subject')} <span className="text-rose-400">*</span>
+                  <label className="block text-xs text-[#8A7556] mb-1.5">
+                    {t('create.subject')} <span className="text-[#7A3A33]">*</span>
                   </label>
                   {teacherSubjects.length === 0 ? (
-                    <p className="text-[11px] text-amber-400">{t('create.noSubjects')}</p>
+                    <p className="text-[11px] text-[#8A6418]">{t('create.noSubjects')}</p>
                   ) : (
                     <select
                       value={subject}
                       onChange={e => setSubject(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors"
+                      className="w-full px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors"
                     >
                       <option value="">{t('create.subjectPh')}</option>
                       {teacherSubjects.map(s => (
@@ -288,9 +288,9 @@ export default function CreateLessonPage() {
               )}
             </div>
 
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+            <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">{t('create.dateTime')}</p>
+                <p className="text-[10px] font-mono text-[#8A7556] uppercase tracking-widest">{t('create.dateTime')}</p>
                 {teacher && availSet.size > 0 && (
                   <SlotCalendarHeader
                     weekStart={weekStart}
@@ -306,9 +306,9 @@ export default function CreateLessonPage() {
               </div>
 
               {!teacher ? (
-                <p className="text-xs text-slate-500">{t('create.pickTutorFirst')}</p>
+                <p className="text-xs text-[#8A7556]">{t('create.pickTutorFirst')}</p>
               ) : availSet.size === 0 ? (
-                <p className="text-xs text-amber-400">{t('create.noAvailability')}</p>
+                <p className="text-xs text-[#8A6418]">{t('create.noAvailability')}</p>
               ) : (
                 <SlotCalendar
                   availSet={availSet}
@@ -320,49 +320,49 @@ export default function CreateLessonPage() {
               )}
             </div>
 
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+            <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">{t('create.notes')}</p>
-                <span className="text-xs font-mono text-slate-500">{notes.length} / 500</span>
+                <p className="text-[10px] font-mono text-[#8A7556] uppercase tracking-widest">{t('create.notes')}</p>
+                <span className="text-xs font-mono text-[#8A7556]">{notes.length} / 500</span>
               </div>
               <textarea
                 rows={5}
                 value={notes}
                 onChange={e => setNotes(e.target.value.slice(0, 500))}
                 placeholder={t('create.notesPh')}
-                className="w-full px-3 py-3 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 text-sm outline-none focus:border-indigo-500 transition-colors resize-none"
+                className="w-full px-3 py-3 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors resize-none"
               />
             </div>
           </div>
 
           <div>
-            <div className="bg-slate-900 rounded-xl border border-slate-800 p-5 sticky top-4">
+            <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5 sticky top-4">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-white">{t('create.preview')}</h2>
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-[10px] text-amber-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />{t('status.pending').toLowerCase()}
+                <h2 className="text-sm font-semibold text-[#2A1F14]">{t('create.preview')}</h2>
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FBEAC9] border border-[#EBC988] text-[10px] text-[#8A6418]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#D89A3A]" />{t('status.pending').toLowerCase()}
                 </span>
               </div>
-              <p className="text-[10px] font-mono text-slate-600">
+              <p className="text-[10px] font-mono text-[#8A7556]">
                 {date && time ? `${date} · ${time}` : t('create.notSet')}
               </p>
-              <p className="text-base font-semibold text-slate-200 mt-2 leading-snug">
+              <p className="text-base font-semibold text-[#2A1F14] mt-2 leading-snug">
                 {teacher?.name ?? t('create.noTutor')}
               </p>
-              {teacher?.headline && <p className="text-xs text-slate-500 mt-1">{teacher.headline}</p>}
+              {teacher?.headline && <p className="text-xs text-[#8A7556] mt-1">{teacher.headline}</p>}
               {subject && (
-                <span className="inline-flex mt-2 px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-[11px] text-indigo-300">
+                <span className="inline-flex mt-2 px-2 py-0.5 rounded-full bg-[#F6E4DA] border border-[#E8B7A2] text-[11px] text-[#B0533A]">
                   {subject}
                 </span>
               )}
-              <hr className="border-slate-800 my-4" />
-              <div className="space-y-2.5 text-sm text-slate-500">
+              <hr className="border-[#EADFCB] my-4" />
+              <div className="space-y-2.5 text-sm text-[#8A7556]">
                 <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#EBDFC6]" />
                   {teacher?.price_60 != null ? `€${teacher.price_60} / 60 min` : t('create.priceOnReq')}
                 </div>
                 {notes && (
-                  <div className="text-xs text-slate-400 leading-relaxed line-clamp-4">{notes}</div>
+                  <div className="text-xs text-[#5A4A38] leading-relaxed line-clamp-4">{notes}</div>
                 )}
               </div>
             </div>

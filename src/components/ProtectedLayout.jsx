@@ -19,8 +19,8 @@ export default function ProtectedLayout({ children }) {
   // valid users or flashes the wrong nav.
   if (loading || (user && profileLoading)) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-950">
-        <div className="w-5 h-5 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
+      <div className="flex h-screen items-center justify-center bg-[#FFFDF8]">
+        <div className="w-5 h-5 rounded-full border-2 border-[#C8654A] border-t-transparent animate-spin" />
       </div>
     );
   }

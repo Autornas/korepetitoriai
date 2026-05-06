@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../app/lib/supabase';
 
 // Hardcoded admin emails — these users see a role-switcher toggle in the
 // Topbar that overrides the role *for UI rendering only*. RLS still applies

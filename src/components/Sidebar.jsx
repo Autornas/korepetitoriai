@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from './AuthProvider';
 import { useLanguage } from './LanguageProvider';
-import { signOut } from '@/lib/auth';
+import { signOut } from '../../app/lib/auth';
 
 const Icons = {
   Grid:     () => <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>,
@@ -58,13 +58,13 @@ export default function Sidebar() {
     .filter(sec => sec.items.length > 0);
 
   return (
-    <aside className="w-60 shrink-0 bg-slate-950 border-r border-slate-800 flex flex-col overflow-y-auto">
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-800">
-        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+    <aside className="w-60 shrink-0 bg-[#FFFDF8] border-r border-[#EADFCB] flex flex-col overflow-y-auto">
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-[#EADFCB]">
+        <div className="w-8 h-8 rounded-lg bg-[#C8654A] flex items-center justify-center text-white font-bold text-sm shrink-0">
           K
         </div>
         <div>
-          <div className="text-white font-semibold text-3xl tracking-tight">
+          <div className="text-[#2A1F14] font-semibold text-3xl tracking-tight">
             Koris
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function Sidebar() {
       <nav className="flex-1 px-3 py-4">
         {visibleSections.map((sec) => (
           <div key={sec.labelKey} className="mb-6">
-            <div className="px-2 mb-2 text-[9px] font-semibold tracking-[0.1em] text-slate-600 uppercase">
+            <div className="px-2 mb-2 text-[9px] font-semibold tracking-[0.1em] text-[#8A7556] uppercase">
               {t(sec.labelKey)}
             </div>
             <ul className="space-y-0.5">
@@ -86,15 +86,15 @@ export default function Sidebar() {
                       href={item.href}
                       className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors group ${
                         active
-                          ? 'bg-slate-800 text-white'
-                          : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                          ? 'bg-[#F4ECDF] text-[#2A1F14]'
+                          : 'text-[#5A4A38] hover:bg-[#FFFDF8] hover:text-[#2A1F14]'
                       }`}
                     >
-                      <span className={active ? 'text-indigo-400' : 'text-slate-600 group-hover:text-slate-400'}>
+                      <span className={active ? 'text-[#B0533A]' : 'text-[#8A7556] group-hover:text-[#5A4A38]'}>
                         <Icon />
                       </span>
                       <span className="flex-1">{t(item.labelKey)}</span>
-                      <span className="text-[10px] font-mono text-slate-700">{item.num}</span>
+                      <span className="text-[10px] font-mono text-[#B5A07F]">{item.num}</span>
                     </Link>
                   </li>
                 );
@@ -104,28 +104,28 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="flex items-center gap-2 px-3 py-3 border-t border-slate-800">
+      <div className="flex items-center gap-2 px-3 py-3 border-t border-[#EADFCB]">
         <Link
           href="/profile"
           title={t('nav.profileSettings')}
           className={`flex items-center gap-3 flex-1 min-w-0 px-2 py-1.5 rounded-lg transition-colors ${
-            pathname === '/profile' ? 'bg-slate-800' : 'hover:bg-slate-900'
+            pathname === '/profile' ? 'bg-[#F4ECDF]' : 'hover:bg-[#FFFDF8]'
           }`}
         >
-          <div className="w-7 h-7 rounded-full bg-indigo-700 flex items-center justify-center text-white text-[10px] font-semibold shrink-0">
+          <div className="w-7 h-7 rounded-full bg-[#B0533A] flex items-center justify-center text-white text-[10px] font-semibold shrink-0">
             {initials}
           </div>
           <div className="min-w-0 flex-1 text-left">
-            <div className="text-slate-200 text-xs font-medium truncate">
+            <div className="text-[#2A1F14] text-xs font-medium truncate">
               {displayName || '—'}
             </div>
-            <div className="text-slate-500 text-[10px] truncate">{user?.email ?? ''}</div>
+            <div className="text-[#8A7556] text-[10px] truncate">{user?.email ?? ''}</div>
           </div>
         </Link>
         <button
           onClick={handleSignOut}
           title={t('nav.signOut')}
-          className="shrink-0 p-2 rounded-lg text-slate-600 hover:text-red-400 hover:bg-slate-900 transition-colors"
+          className="shrink-0 p-2 rounded-lg text-[#8A7556] hover:text-[#7A3A33] hover:bg-[#FFFDF8] transition-colors"
         >
           <Icons.Logout />
         </button>

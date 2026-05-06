@@ -45,15 +45,15 @@ function JoinSection({ lesson }) {
   const meetUrl = meetUrlFor(lesson);
 
   return (
-    <div className="mt-4 mb-1 p-3 rounded-lg border border-slate-800 bg-slate-950/40">
-      <p className="text-[10px] font-mono uppercase tracking-widest text-slate-600 mb-2">
+    <div className="mt-4 mb-1 p-3 rounded-lg border border-[#EADFCB] bg-[#F4ECDF]">
+      <p className="text-[10px] font-mono uppercase tracking-widest text-[#8A7556] mb-2">
         {t('lessonDetail.lessonRoom')}
       </p>
       {active ? (
         <div className="space-y-2">
           <Link
             href={`/lessons/${lesson.id}/call`}
-            className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 transition-colors"
+            className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-[#7A8C5C] text-white text-sm font-medium hover:bg-[#677A4D] transition-colors"
           >
             <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
             {diff <= 0 ? t('lessonDetail.live') : t('lessonDetail.join')}
@@ -62,7 +62,7 @@ function JoinSection({ lesson }) {
             href={meetUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 text-xs hover:bg-slate-700 transition-colors"
+            className="flex items-center justify-center gap-2 w-full px-3 py-1.5 rounded-lg bg-[#F4ECDF] border border-[#DCC9A8] text-[#5A4A38] text-xs hover:bg-[#EBDFC6] transition-colors"
           >
             Open external Meet
           </a>
@@ -71,7 +71,7 @@ function JoinSection({ lesson }) {
         <button
           type="button"
           disabled
-          className="flex items-center justify-center w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-500 text-sm cursor-not-allowed"
+          className="flex items-center justify-center w-full px-3 py-2 rounded-lg bg-[#F4ECDF] border border-[#DCC9A8] text-[#8A7556] text-sm cursor-not-allowed"
         >
           {t('lessonDetail.ended')}
         </button>
@@ -80,30 +80,30 @@ function JoinSection({ lesson }) {
           <button
             type="button"
             disabled
-            className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-sm cursor-not-allowed"
+            className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-[#F4ECDF] border border-[#DCC9A8] text-[#5A4A38] text-sm cursor-not-allowed"
           >
             {t('lessonDetail.join')}
           </button>
-          <p className="mt-2 text-center text-[11px] font-mono text-slate-500">
-            {t('lessonDetail.startsIn')} <span className="text-slate-300">{formatCountdown(diff)}</span>
+          <p className="mt-2 text-center text-[11px] font-mono text-[#8A7556]">
+            {t('lessonDetail.startsIn')} <span className="text-[#5A4A38]">{formatCountdown(diff)}</span>
           </p>
         </div>
       )}
-      <p className="mt-2 text-[10px] font-mono text-slate-600 break-all">{meetUrl}</p>
+      <p className="mt-2 text-[10px] font-mono text-[#8A7556] break-all">{meetUrl}</p>
     </div>
   );
 }
 
 export const STATUS_PILL = {
-  pending:  'bg-amber-500/20 border-amber-500/40 text-amber-300',
-  accepted: 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300',
-  rejected: 'bg-rose-500/20 border-rose-500/40 text-rose-300',
+  pending:  'bg-[#FBEAC9] border-[#EBC988] text-[#8A6418]',
+  accepted: 'bg-[#E6EBD5] border-[#BDC79A] text-[#4F5F36]',
+  rejected: 'bg-[#F4D9D5] border-[#E0A89F] text-[#7A3A33]',
 };
 
 function Field({ label, children }) {
   return (
     <div>
-      <p className="text-[10px] font-mono uppercase tracking-widest text-slate-600 mb-1">{label}</p>
+      <p className="text-[10px] font-mono uppercase tracking-widest text-[#8A7556] mb-1">{label}</p>
       {children}
     </div>
   );
@@ -126,32 +126,32 @@ export default function LessonDetailModal({ lesson, perspective, onClose }) {
       onClick={onClose}
     >
       <div
-        className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto"
+        className="bg-[#FFFDF8] border border-[#EADFCB] rounded-2xl shadow-2xl w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         <button
           onClick={onClose}
           title={t('lessonDetail.close')}
-          className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition-colors"
+          className="absolute top-4 right-4 text-[#8A7556] hover:text-[#5A4A38] transition-colors"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 3l10 10M13 3L3 13"/>
           </svg>
         </button>
 
-        <p className="text-[10px] font-mono uppercase tracking-widest text-slate-600 mb-3">
+        <p className="text-[10px] font-mono uppercase tracking-widest text-[#8A7556] mb-3">
           {t('lessonDetail.title')}
         </p>
 
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-300 text-sm font-medium shrink-0 overflow-hidden">
+          <div className="w-12 h-12 rounded-full bg-[#F4ECDF] flex items-center justify-center text-[#5A4A38] text-sm font-medium shrink-0 overflow-hidden">
             {p?.photo_url
               ? <img src={p.photo_url} alt="" className="w-full h-full object-cover" />
               : initials}
           </div>
           <div className="min-w-0">
-            <p className="text-base font-semibold text-slate-100 truncate">{p?.name ?? '—'}</p>
-            {p?.headline && <p className="text-xs text-slate-500 truncate">{p.headline}</p>}
+            <p className="text-base font-semibold text-[#2A1F14] truncate">{p?.name ?? '—'}</p>
+            {p?.headline && <p className="text-xs text-[#8A7556] truncate">{p.headline}</p>}
           </div>
           <span className={`ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] ${STATUS_PILL[lesson.status] ?? STATUS_PILL.pending}`}>
             <span className="w-1.5 h-1.5 rounded-full bg-current" />
@@ -163,14 +163,14 @@ export default function LessonDetailModal({ lesson, perspective, onClose }) {
 
         <div className="space-y-3 mt-4">
           <Field label={t('lessonDetail.when')}>
-            <p className="text-sm text-slate-200 font-mono">
+            <p className="text-sm text-[#2A1F14] font-mono">
               {lesson.date} · {lesson.time?.slice(0, 5)}
             </p>
           </Field>
 
           {lesson.subject && (
             <Field label={t('lessonDetail.subject')}>
-              <span className="inline-flex px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-[11px] text-indigo-300">
+              <span className="inline-flex px-2 py-0.5 rounded-full bg-[#F6E4DA] border border-[#E8B7A2] text-[11px] text-[#B0533A]">
                 {lesson.subject}
               </span>
             </Field>
@@ -179,25 +179,25 @@ export default function LessonDetailModal({ lesson, perspective, onClose }) {
           {/* Teacher viewing student */}
           {!isStudentView && p?.grade && (
             <Field label={t('lessonDetail.grade')}>
-              <p className="text-sm text-slate-200">{p.grade}</p>
+              <p className="text-sm text-[#2A1F14]">{p.grade}</p>
             </Field>
           )}
 
           {lesson.notes && (
             <Field label={t('dashboard.notes')}>
-              <p className="text-sm text-slate-300 whitespace-pre-wrap">{lesson.notes}</p>
+              <p className="text-sm text-[#5A4A38] whitespace-pre-wrap">{lesson.notes}</p>
             </Field>
           )}
 
           {!isStudentView && p?.learning_struggles && (
             <Field label={t('dashboard.struggles')}>
-              <p className="text-sm text-slate-300 whitespace-pre-wrap">{p.learning_struggles}</p>
+              <p className="text-sm text-[#5A4A38] whitespace-pre-wrap">{p.learning_struggles}</p>
             </Field>
           )}
 
           {!isStudentView && p?.expectations && (
             <Field label={t('dashboard.expects')}>
-              <p className="text-sm text-slate-300 whitespace-pre-wrap">{p.expectations}</p>
+              <p className="text-sm text-[#5A4A38] whitespace-pre-wrap">{p.expectations}</p>
             </Field>
           )}
 
@@ -206,7 +206,7 @@ export default function LessonDetailModal({ lesson, perspective, onClose }) {
             <Field label={t('lessonDetail.subjects')}>
               <div className="flex flex-wrap gap-1.5">
                 {p.subjects.filter(s => s?.name).map((s, i) => (
-                  <span key={i} className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-[11px] text-indigo-300">
+                  <span key={i} className="px-2 py-0.5 rounded-full bg-[#F6E4DA] border border-[#E8B7A2] text-[11px] text-[#B0533A]">
                     {s.name}{s.grades ? ` · ${s.grades}` : ''}
                   </span>
                 ))}
@@ -218,7 +218,7 @@ export default function LessonDetailModal({ lesson, perspective, onClose }) {
             <Field label={t('lessonDetail.tags')}>
               <div className="flex flex-wrap gap-1.5">
                 {p.tags.map((tag, i) => (
-                  <span key={i} className="px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[11px] text-slate-300">
+                  <span key={i} className="px-2 py-0.5 rounded-full bg-[#F4ECDF] border border-[#DCC9A8] text-[11px] text-[#5A4A38]">
                     {tag}
                   </span>
                 ))}
@@ -228,19 +228,19 @@ export default function LessonDetailModal({ lesson, perspective, onClose }) {
 
           {isStudentView && p?.price_60 != null && (
             <Field label={t('lessonDetail.price')}>
-              <p className="text-sm text-slate-200">€{p.price_60} <span className="text-xs text-slate-500">/ 60 min</span></p>
+              <p className="text-sm text-[#2A1F14]">€{p.price_60} <span className="text-xs text-[#8A7556]">/ 60 min</span></p>
             </Field>
           )}
 
           {isStudentView && p?.bio && (
             <Field label={t('lessonDetail.aboutTutor')}>
-              <p className="text-sm text-slate-300 whitespace-pre-wrap">{p.bio}</p>
+              <p className="text-sm text-[#5A4A38] whitespace-pre-wrap">{p.bio}</p>
             </Field>
           )}
 
           {p?.email && (
             <Field label={t('lessonDetail.contact')}>
-              <a href={`mailto:${p.email}`} className="text-sm text-indigo-400 hover:text-indigo-300 break-all">
+              <a href={`mailto:${p.email}`} className="text-sm text-[#B0533A] hover:text-[#B0533A] break-all">
                 {p.email}
               </a>
             </Field>
@@ -248,14 +248,14 @@ export default function LessonDetailModal({ lesson, perspective, onClose }) {
 
           {p?.phone && (
             <Field label={t('lessonDetail.phone')}>
-              <a href={`tel:${p.phone}`} className="text-sm text-indigo-400 hover:text-indigo-300">
+              <a href={`tel:${p.phone}`} className="text-sm text-[#B0533A] hover:text-[#B0533A]">
                 {p.phone}
               </a>
             </Field>
           )}
 
           {noInfo && !lesson.notes && (
-            <p className="text-xs text-slate-500 italic">
+            <p className="text-xs text-[#8A7556] italic">
               {isStudentView ? t('lessonDetail.noTutorInfo') : t('lessonDetail.noStudentInfo')}
             </p>
           )}

@@ -12,7 +12,7 @@
 // symmetric NATs. Add a TURN server config later for reliability.
 
 import { useEffect, useRef, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../../app/lib/supabase';
 
 const ICE_SERVERS = [
   { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
@@ -189,34 +189,34 @@ export default function VideoCall({ lessonId, userId }) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-950">
+    <div className="flex flex-col h-full bg-[#FFFDF8]">
       <div className="flex-1 grid grid-rows-[2fr_1fr] gap-2 p-3 min-h-0">
-        <div className="relative bg-slate-900 rounded-lg overflow-hidden border border-slate-800 min-h-0">
+        <div className="relative bg-[#FFFDF8] rounded-lg overflow-hidden border border-[#EADFCB] min-h-0">
           <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
-          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 text-[10px] text-slate-300">
+          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 text-[10px] text-[#5A4A38]">
             Peer · {status}
           </span>
         </div>
-        <div className="relative bg-slate-900 rounded-lg overflow-hidden border border-slate-800 min-h-0">
+        <div className="relative bg-[#FFFDF8] rounded-lg overflow-hidden border border-[#EADFCB] min-h-0">
           <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
-          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 text-[10px] text-slate-300">You</span>
+          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 text-[10px] text-[#5A4A38]">You</span>
         </div>
       </div>
-      <div className="flex justify-center gap-2 p-3 border-t border-slate-800">
+      <div className="flex justify-center gap-2 p-3 border-t border-[#EADFCB]">
         <button
           onClick={toggleMute}
-          className={`px-3 py-1.5 rounded-md text-xs transition-colors ${muted ? 'bg-rose-600 text-white hover:bg-rose-500' : 'bg-slate-800 border border-slate-700 text-slate-200 hover:bg-slate-700'}`}
+          className={`px-3 py-1.5 rounded-md text-xs transition-colors ${muted ? 'bg-[#B85A4F] text-white hover:bg-[#B85A4F]/85' : 'bg-[#F4ECDF] border border-[#DCC9A8] text-[#2A1F14] hover:bg-[#EBDFC6]'}`}
         >
           {muted ? 'Unmute' : 'Mute'}
         </button>
         <button
           onClick={toggleCam}
-          className={`px-3 py-1.5 rounded-md text-xs transition-colors ${camOff ? 'bg-rose-600 text-white hover:bg-rose-500' : 'bg-slate-800 border border-slate-700 text-slate-200 hover:bg-slate-700'}`}
+          className={`px-3 py-1.5 rounded-md text-xs transition-colors ${camOff ? 'bg-[#B85A4F] text-white hover:bg-[#B85A4F]/85' : 'bg-[#F4ECDF] border border-[#DCC9A8] text-[#2A1F14] hover:bg-[#EBDFC6]'}`}
         >
           {camOff ? 'Camera on' : 'Camera off'}
         </button>
       </div>
-      {error && <p className="px-3 pb-3 text-xs text-rose-400">{error}</p>}
+      {error && <p className="px-3 pb-3 text-xs text-[#7A3A33]">{error}</p>}
     </div>
   );
 }

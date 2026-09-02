@@ -49,6 +49,24 @@ create policy "lessons_insert_student"
     )
   );
 
+-- Insert: only the teacher themselves, only as accepted (they're scheduling
+-- it directly, so it doesn't need the pending-approval flow). Admin emails
+-- bypass the role check.
+drop policy if exists "lessons_insert_teacher" on public.lessons;
+create policy "lessons_insert_teacher"
+  on public.lessons for insert
+  with check (
+    auth.uid() = teacher_id
+    and status = 'accepted'
+    and (
+      exists (
+        select 1 from public.profiles p
+        where p.id = auth.uid() and p.role = 'teacher'
+      )
+      or auth.email() = any (array['autornas123@gmail.com'])
+    )
+  );
+
 -- Update: only the teacher on the lesson. Admin emails bypass the role check.
 drop policy if exists "lessons_update_teacher" on public.lessons;
 create policy "lessons_update_teacher"

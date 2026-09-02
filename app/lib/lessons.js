@@ -33,6 +33,39 @@ export async function getTeacher(id) {
   return data;
 }
 
+export async function listStudents() {
+  requireSupabase();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, name, email, photo_url, grade')
+    .eq('role', 'student')
+    .order('name', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createLessonAsTeacher({ teacherId, studentId, date, time, subject, notes }) {
+  requireSupabase();
+  if (!studentId || !teacherId || !date || !time) {
+    throw new Error('Student, teacher, date, and time are required.');
+  }
+  const { data, error } = await supabase
+    .from('lessons')
+    .insert({
+      student_id: studentId,
+      teacher_id: teacherId,
+      date,
+      time,
+      subject: subject?.trim() || null,
+      notes: notes?.trim() || null,
+      status: 'accepted',
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function createLessonRequest({ studentId, teacherId, date, time, subject, notes }) {
   requireSupabase();
   if (!studentId || !teacherId || !date || !time) {

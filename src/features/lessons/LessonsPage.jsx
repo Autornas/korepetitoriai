@@ -6,6 +6,7 @@ import Topbar from '@/components/Topbar';
 import { useAuth } from '@/components/AuthProvider';
 import { useLanguage } from '@/components/LanguageProvider';
 import LessonDetailModal, { STATUS_PILL } from './LessonDetailModal';
+import WeekCalendar from './WeekCalendar';
 import {
   listLessonsForStudent,
   listLessonsForTeacher,
@@ -38,6 +39,7 @@ export default function LessonsPage() {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('All');
+  const [view, setView] = useState('list');
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState('');
   const [selectedId, setSelectedId] = useState(null);
@@ -108,32 +110,66 @@ export default function LessonsPage() {
               {t('lessons.findTutor')}
             </Link>
           )}
+          {isTeacher && (
+            <Link href="/lessons/schedule" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#C8654A] text-white text-sm hover:bg-[#B0533A] transition-colors">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 3v10M3 8h10"/></svg>
+              {t('lessons.scheduleLesson')}
+            </Link>
+          )}
         </div>
 
         {error && (
           <div className="px-4 py-3 rounded-lg bg-[#F4D9D5] border border-[#E0A89F] text-red-400 text-sm">{error}</div>
         )}
 
-        <div className="flex gap-1 border-b border-[#EADFCB]">
-          {TABS.map(({ key, labelKey }) => (
+        <div className="flex items-center justify-between border-b border-[#EADFCB]">
+          <div className="flex gap-1">
+            {TABS.map(({ key, labelKey }) => (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`px-4 py-2.5 text-sm border-b-2 transition-colors ${
+                  tab === key
+                    ? 'border-[#C8654A] text-[#B0533A]'
+                    : 'border-transparent text-[#8A7556] hover:text-[#5A4A38]'
+                }`}
+              >
+                {t(labelKey)}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1 mb-2">
             <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`px-4 py-2.5 text-sm border-b-2 transition-colors ${
-                tab === key
-                  ? 'border-[#C8654A] text-[#B0533A]'
-                  : 'border-transparent text-[#8A7556] hover:text-[#5A4A38]'
+              onClick={() => setView('list')}
+              className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${
+                view === 'list' ? 'bg-[#F4ECDF] text-[#2A1F14]' : 'text-[#8A7556] hover:text-[#5A4A38]'
               }`}
             >
-              {t(labelKey)}
+              {t('lessons.viewList')}
             </button>
-          ))}
+            <button
+              onClick={() => setView('calendar')}
+              className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${
+                view === 'calendar' ? 'bg-[#F4ECDF] text-[#2A1F14]' : 'text-[#8A7556] hover:text-[#5A4A38]'
+              }`}
+            >
+              {t('lessons.viewCalendar')}
+            </button>
+          </div>
         </div>
 
         <div className="space-y-3">
           {loading ? (
             <div className="flex justify-center py-16">
               <div className="w-5 h-5 rounded-full border-2 border-[#C8654A] border-t-transparent animate-spin" />
+            </div>
+          ) : view === 'calendar' ? (
+            <div className="bg-[#FFFDF8] rounded-2xl border border-[#EADFCB] p-5">
+              <WeekCalendar
+                lessons={filtered}
+                perspective={isTeacher ? 'teacher' : 'student'}
+                onSelect={(ev) => setSelectedId(ev.id)}
+              />
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-[#8A7556] bg-[#FFFDF8] rounded-2xl border border-[#EADFCB]">
@@ -144,6 +180,11 @@ export default function LessonsPage() {
               {!isTeacher && tab === 'All' && (
                 <Link href="/tutors" className="mt-4 px-4 py-2 rounded-lg bg-[#C8654A] text-white text-sm hover:bg-[#B0533A] transition-colors">
                   {t('lessons.findTutor')}
+                </Link>
+              )}
+              {isTeacher && tab === 'All' && (
+                <Link href="/lessons/schedule" className="mt-4 px-4 py-2 rounded-lg bg-[#C8654A] text-white text-sm hover:bg-[#B0533A] transition-colors">
+                  {t('lessons.scheduleLesson')}
                 </Link>
               )}
             </div>

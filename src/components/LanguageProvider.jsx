@@ -141,6 +141,19 @@ const translations = {
     'create.weekPrev':      'Previous week',
     'create.weekNext':      'Next week',
 
+    // Schedule lesson page (teacher)
+    'schedule.crumb':          'Schedule Lesson',
+    'schedule.kicker':         'Schedule Lesson',
+    'schedule.title':          'Schedule a Lesson',
+    'schedule.subtitle':       'Pick a student and set a time. The lesson is confirmed right away.',
+    'schedule.create':         'Create Lesson',
+    'schedule.sending':        'Creating…',
+    'schedule.student':        'Student',
+    'schedule.selectStudent':  'Select a student',
+    'schedule.noStudents':     'No students have registered yet.',
+    'schedule.preview':        'Lesson Preview',
+    'schedule.noStudent':      'No student selected',
+
     // Tutors page
     'tutors.crumb':            'Find a Tutor',
     'tutors.kicker':           'Find a Tutor',
@@ -181,6 +194,9 @@ const translations = {
     'lessons.subtitleTeacher':  'Incoming lesson requests and your scheduled sessions.',
     'lessons.subtitleStudent':  'Track every lesson request you have sent.',
     'lessons.findTutor':        'Find a Tutor',
+    'lessons.scheduleLesson':   'Schedule Lesson',
+    'lessons.viewList':         'List',
+    'lessons.viewCalendar':     'Calendar',
     'lessons.noLessons':        'No lessons yet',
     'lessons.noPending':        'No pending lessons',
     'lessons.noAccepted':       'No accepted lessons',
@@ -357,6 +373,19 @@ const translations = {
     'create.weekPrev':      'Ankstesnė savaitė',
     'create.weekNext':      'Kita savaitė',
 
+    // Schedule lesson page (teacher)
+    'schedule.crumb':          'Suplanuoti pamoką',
+    'schedule.kicker':         'Suplanuoti pamoką',
+    'schedule.title':          'Suplanuoti pamoką',
+    'schedule.subtitle':       'Pasirinkite mokinį ir laiką. Pamoka bus iškart patvirtinta.',
+    'schedule.create':         'Sukurti pamoką',
+    'schedule.sending':        'Kuriama…',
+    'schedule.student':        'Mokinys',
+    'schedule.selectStudent':  'Pasirinkite mokinį',
+    'schedule.noStudents':     'Kol kas neregistruota nė vieno mokinio.',
+    'schedule.preview':        'Pamokos peržiūra',
+    'schedule.noStudent':      'Mokinys nepasirinktas',
+
     // Tutors page
     'tutors.crumb':            'Rasti korepetitorių',
     'tutors.kicker':           'Rasti korepetitorių',
@@ -397,6 +426,9 @@ const translations = {
     'lessons.subtitleTeacher':  'Gautos pamokų užklausos ir suplanuoti susitikimai.',
     'lessons.subtitleStudent':  'Sekite visas išsiųstas pamokų užklausas.',
     'lessons.findTutor':        'Rasti korepetitorių',
+    'lessons.scheduleLesson':   'Suplanuoti pamoką',
+    'lessons.viewList':         'Sąrašas',
+    'lessons.viewCalendar':     'Kalendorius',
     'lessons.noLessons':        'Pamokų dar nėra',
     'lessons.noPending':        'Laukiančių pamokų nėra',
     'lessons.noAccepted':       'Priimtų pamokų nėra',

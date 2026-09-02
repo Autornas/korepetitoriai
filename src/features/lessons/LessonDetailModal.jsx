@@ -109,7 +109,71 @@ function Field({ label, children }) {
   );
 }
 
-export default function LessonDetailModal({ lesson, perspective, onClose }) {
+function PaymentSection({ lesson, perspective, teacher, onMarkPaid }) {
+  const { t } = useLanguage();
+  const [marking, setMarking] = useState(false);
+  if (lesson.status !== 'accepted') return null;
+
+  const isPaid = Boolean(lesson.paid_at);
+
+  return (
+    <div className="mt-4 p-3 rounded-lg border border-[#EADFCB] bg-[#F4ECDF]">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[10px] font-mono uppercase tracking-widest text-[#8A7556]">
+          {t('lessonDetail.payment')}
+        </p>
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] ${
+          isPaid ? 'bg-[#E6EBD5] border-[#BDC79A] text-[#4F5F36]' : 'bg-[#FBEAC9] border-[#EBC988] text-[#8A6418]'
+        }`}>
+          <span className="w-1.5 h-1.5 rounded-full bg-current" />
+          {isPaid ? t('lessonDetail.paid') : t('lessonDetail.unpaid')}
+        </span>
+      </div>
+
+      {perspective === 'student' && !isPaid && (
+        <div className="space-y-1.5">
+          <p className="text-xs text-[#5A4A38]">{t('lessonDetail.payInstructions')}</p>
+          {teacher?.bank_iban ? (
+            <p className="text-sm font-mono text-[#2A1F14] break-all">{teacher.bank_iban}</p>
+          ) : (
+            <p className="text-xs text-[#8A6418] italic">{t('lessonDetail.noIban')}</p>
+          )}
+          <p className="text-[11px] text-[#8A7556]">
+            {t('lessonDetail.paymentRef')}: <span className="font-mono text-[#2A1F14]">{lesson.payment_code}</span>
+          </p>
+          {teacher?.price_60 != null && (
+            <p className="text-[11px] text-[#8A7556]">
+              {t('lessonDetail.amount')}: <span className="font-mono text-[#2A1F14]">€{teacher.price_60}</span>
+            </p>
+          )}
+        </div>
+      )}
+
+      {perspective === 'teacher' && (
+        <div className="space-y-1.5">
+          <p className="text-[11px] text-[#8A7556]">
+            {t('lessonDetail.paymentRef')}: <span className="font-mono text-[#2A1F14]">{lesson.payment_code}</span>
+          </p>
+          {!isPaid && onMarkPaid && (
+            <button
+              type="button"
+              disabled={marking}
+              onClick={async () => {
+                setMarking(true);
+                try { await onMarkPaid(lesson.id); } finally { setMarking(false); }
+              }}
+              className="mt-1 w-full px-3 py-1.5 rounded-lg bg-[#7A8C5C] text-white text-xs font-medium hover:bg-[#677A4D] transition-colors disabled:opacity-50"
+            >
+              {marking ? t('common.saving') : t('lessonDetail.markPaid')}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function LessonDetailModal({ lesson, perspective, onClose, onMarkPaid }) {
   const { t } = useLanguage();
   // perspective: 'teacher' (viewing student) or 'student' (viewing tutor)
   const p = perspective === 'teacher' ? lesson.student : lesson.teacher;
@@ -161,6 +225,13 @@ export default function LessonDetailModal({ lesson, perspective, onClose }) {
         </div>
 
         <JoinSection lesson={lesson} />
+
+        <PaymentSection
+          lesson={lesson}
+          perspective={perspective}
+          teacher={isStudentView ? p : null}
+          onMarkPaid={onMarkPaid}
+        />
 
         {counterpartId && lesson.status !== 'rejected' && (
           <Link

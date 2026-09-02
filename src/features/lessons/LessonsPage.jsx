@@ -11,6 +11,7 @@ import {
   listLessonsForStudent,
   listLessonsForTeacher,
   updateLessonStatus,
+  markLessonPaid,
 } from '../../../app/lib/lessons';
 
 const TABS = [
@@ -81,6 +82,15 @@ export default function LessonsPage() {
     }
   };
 
+  const handleMarkPaid = async (id) => {
+    try {
+      await markLessonPaid(id);
+      setLessons(ls => ls.map(l => l.id === id ? { ...l, paid_at: new Date().toISOString() } : l));
+    } catch (e) {
+      setError(e.message ?? t('lessons.failedUpdate'));
+    }
+  };
+
   const selectedLesson = selectedId ? lessons.find(l => l.id === selectedId) : null;
 
   return (
@@ -90,6 +100,7 @@ export default function LessonsPage() {
           lesson={selectedLesson}
           perspective={isTeacher ? 'teacher' : 'student'}
           onClose={() => setSelectedId(null)}
+          onMarkPaid={isTeacher ? handleMarkPaid : undefined}
         />
       )}
       <Topbar crumbs={[t('lessons.crumb')]} />

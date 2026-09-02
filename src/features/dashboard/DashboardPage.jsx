@@ -11,9 +11,10 @@ import {
   listLessonsForStudent,
   listLessonsForTeacher,
   updateLessonStatus,
+  markLessonPaid,
 } from '../../../app/lib/lessons';
 
-function TeacherDashboard({ lessons, onUpdate, busyId }) {
+function TeacherDashboard({ lessons, onUpdate, onMarkPaid, busyId }) {
   const { t } = useLanguage();
   const [selectedId, setSelectedId] = useState(null);
   const pending = lessons.filter(l => l.status === 'pending');
@@ -27,6 +28,7 @@ function TeacherDashboard({ lessons, onUpdate, busyId }) {
         <LessonDetailModal
           lesson={selectedLesson}
           perspective="teacher"
+          onMarkPaid={onMarkPaid}
           onClose={() => setSelectedId(null)}
         />
       )}
@@ -282,6 +284,15 @@ export default function DashboardPage() {
     }
   };
 
+  const handleMarkPaid = async (id) => {
+    try {
+      await markLessonPaid(id);
+      setLessons(ls => ls.map(l => l.id === id ? { ...l, paid_at: new Date().toISOString() } : l));
+    } catch (e) {
+      setError(e.message ?? 'Failed to update lesson.');
+    }
+  };
+
   const isTeacher = role === 'teacher';
 
   return (
@@ -309,7 +320,7 @@ export default function DashboardPage() {
             <div className="w-5 h-5 rounded-full border-2 border-[#C8654A] border-t-transparent animate-spin" />
           </div>
         ) : isTeacher ? (
-          <TeacherDashboard lessons={lessons} onUpdate={handleUpdate} busyId={busyId} />
+          <TeacherDashboard lessons={lessons} onUpdate={handleUpdate} onMarkPaid={handleMarkPaid} busyId={busyId} />
         ) : (
           <StudentDashboard lessons={lessons} />
         )}

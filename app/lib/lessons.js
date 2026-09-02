@@ -93,7 +93,7 @@ async function attachProfiles(lessons, key) {
   const ids = [...new Set(lessons.map(l => l[key]))];
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, name, email, phone, photo_url, headline, subjects, tags, price_60, bio, grade, learning_struggles, expectations')
+    .select('id, name, email, phone, photo_url, headline, subjects, tags, price_60, bio, grade, learning_struggles, expectations, bank_iban')
     .in('id', ids);
   const map = new Map((profiles ?? []).map(p => [p.id, p]));
   const field = key === 'teacher_id' ? 'teacher' : 'student';
@@ -129,6 +129,18 @@ export async function setLessonMeetLink(lessonId, meetLink) {
   const { data, error } = await supabase
     .from('lessons')
     .update({ meet_link: meetLink, updated_at: new Date().toISOString() })
+    .eq('id', lessonId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function markLessonPaid(lessonId) {
+  requireSupabase();
+  const { data, error } = await supabase
+    .from('lessons')
+    .update({ paid_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq('id', lessonId)
     .select()
     .single();

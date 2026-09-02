@@ -72,7 +72,14 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-anon-key>
 
 ### 3. Apply the schema
 
-The SQL for `profiles`, `lessons`, `messages`, plus the RLS policies live in [`db/migrations/`](./db/migrations). Run them in order against your Supabase project (e.g. via the SQL editor or `supabase db push`).
+The SQL for `profiles`, `lessons`, `messages`, plus the RLS policies live in [`db/migrations/`](./db/migrations). Run them **in this order** against your Supabase project (e.g. via the SQL editor or `supabase db push`), since later files reference tables/columns the earlier ones create:
+
+1. `profiles.sql`
+2. `profiles_phone.sql`
+3. `profiles_student_info.sql`
+4. `lessons.sql`
+5. `messages.sql`
+6. `storage_avatars.sql`
 
 ### 4. Run
 

@@ -1,8 +1,9 @@
 'use client';
 
 // 1:1 WebRTC video call using Supabase Realtime as the signaling channel.
-// - Both peers subscribe to `lesson-call:<lessonId>` and announce themselves
-//   via Realtime presence.
+// - Both peers subscribe to the server-derived `channelName` (see
+//   deriveRoomChannel in src/server/services/lessons.js) and announce
+//   themselves via Realtime presence.
 // - The peer with the lexicographically smaller userId initiates the offer;
 //   the other one answers. This deterministic role split avoids the need for
 //   full perfect-negotiation logic in a 2-party room.
@@ -12,13 +13,13 @@
 // symmetric NATs. Add a TURN server config later for reliability.
 
 import { useEffect, useRef, useState } from 'react';
-import { supabase } from '../../../app/lib/supabase';
+import { getBrowserSupabase } from '@/lib/supabase/browser';
 
 const ICE_SERVERS = [
   { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
 ];
 
-export default function VideoCall({ lessonId, userId }) {
+export default function VideoCall({ channelName, userId }) {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const localStreamRef = useRef(null);
@@ -56,7 +57,8 @@ export default function VideoCall({ lessonId, userId }) {
 
   // Open signaling channel + WebRTC peer connection once media is ready.
   useEffect(() => {
-    if (!streamReady || !supabase || !lessonId || !userId) return;
+    const supabase = getBrowserSupabase();
+    if (!streamReady || !supabase || !channelName || !userId) return;
 
     const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
     pcRef.current = pc;
@@ -76,7 +78,13 @@ export default function VideoCall({ lessonId, userId }) {
       else if (pc.connectionState === 'connected') setStatus('Connected');
     };
 
-    const channel = supabase.channel(`lesson-call:${lessonId}`, {
+    // Still not RLS-enforced — see the note at the top of
+    // realtime_lesson_rooms.sql and deriveRoomChannel() in
+    // src/server/services/lessons.js. `channelName` is an HMAC of the lesson
+    // id the server hands out only once /access has authorised the caller,
+    // so it isn't derivable from the room URL, logs, or browser history the
+    // way the raw lesson id was.
+    const channel = supabase.channel(channelName, {
       config: { presence: { key: userId }, broadcast: { self: false } },
     });
     channelRef.current = channel;
@@ -170,7 +178,7 @@ export default function VideoCall({ lessonId, userId }) {
       peerIdRef.current = null;
       pendingIceRef.current = [];
     };
-  }, [streamReady, lessonId, userId]);
+  }, [streamReady, channelName, userId]);
 
   const toggleMute = () => {
     const stream = localStreamRef.current;

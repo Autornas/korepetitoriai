@@ -8,16 +8,17 @@ import { useLanguage } from '@/components/LanguageProvider';
 import LessonDetailModal from '@/features/lessons/LessonDetailModal';
 import WeekCalendar, { StatusPill } from '@/features/lessons/WeekCalendar';
 import {
-  listLessonsForStudent,
-  listLessonsForTeacher,
-  updateLessonStatus,
+  listMyLessons,
+  acceptLesson,
+  rejectLesson,
   markLessonPaid,
-} from '../../../app/lib/lessons';
+  getLessonCounterpart,
+} from '@/lib/api/lessons';
 
-function TeacherDashboard({ lessons, onUpdate, onMarkPaid, busyId }) {
+function TeacherDashboard({ lessons, userId, onUpdate, onMarkPaid, busyId }) {
   const { t } = useLanguage();
   const [selectedId, setSelectedId] = useState(null);
-  const pending = lessons.filter(l => l.status === 'pending');
+  const pending = lessons.filter(l => l.status === 'pending' && l.created_by && l.created_by !== userId);
   const accepted = lessons.filter(l => l.status === 'accepted');
   const upcoming = accepted.filter(l => new Date(`${l.date}T${l.time}`) >= new Date());
   const selectedLesson = selectedId ? lessons.find(l => l.id === selectedId) : null;
@@ -137,11 +138,14 @@ function TeacherDashboard({ lessons, onUpdate, onMarkPaid, busyId }) {
   );
 }
 
-function StudentDashboard({ lessons }) {
+function StudentDashboard({ lessons, userId, onUpdate, busyId }) {
   const { t } = useLanguage();
   const [selectedId, setSelectedId] = useState(null);
   const upcoming = lessons.filter(l => new Date(`${l.date}T${l.time}`) >= new Date());
   const pending  = lessons.filter(l => l.status === 'pending');
+  // A tutor can now propose a lesson too, and it arrives pending. Those are
+  // the ones waiting on the student, as opposed to their own outgoing requests.
+  const awaitingMe = pending.filter(l => l.created_by && l.created_by !== userId);
   const selectedLesson = selectedId ? lessons.find(l => l.id === selectedId) : null;
 
   const quickActions = [
@@ -167,6 +171,50 @@ function StudentDashboard({ lessons }) {
           <p className="text-2xl font-semibold text-[#2A1F14] mt-1">{pending.length}</p>
         </div>
       </div>
+
+      {awaitingMe.length > 0 && (
+        <div className="bg-[#FFFDF8] rounded-xl border border-[#E8B7A2] p-5">
+          <h2 className="text-sm font-semibold text-[#2A1F14] mb-3">
+            {t('dashboard.proposedTitle')}
+          </h2>
+          <ul className="space-y-3">
+            {awaitingMe.map(l => (
+              <li key={l.id} className="rounded-lg border border-[#EADFCB] bg-[#F4ECDF] p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-sm font-medium text-[#2A1F14] truncate">
+                    {l.teacher?.name ?? t('dashboard.teacher')}
+                  </p>
+                  <StatusPill status={l.status} />
+                </div>
+                <p className="text-[11px] font-mono text-[#8A7556]">
+                  {l.date} · {l.time?.slice(0, 5)}{l.subject ? ` · ${l.subject}` : ''}
+                </p>
+                {l.notes && (
+                  <p className="text-xs text-[#5A4A38] mt-1.5 line-clamp-2">{l.notes}</p>
+                )}
+                <div className="flex gap-2 mt-3">
+                  <button
+                    type="button"
+                    disabled={busyId === l.id}
+                    onClick={() => onUpdate(l.id, 'accepted')}
+                    className="flex-1 px-2 py-1.5 rounded-md bg-[#7A8C5C] text-white text-xs font-medium hover:bg-[#677A4D] transition-colors disabled:opacity-50"
+                  >
+                    {t('dashboard.accept')}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyId === l.id}
+                    onClick={() => onUpdate(l.id, 'rejected')}
+                    className="flex-1 px-2 py-1.5 rounded-md bg-[#F4ECDF] border border-[#DCC9A8] text-[#5A4A38] text-xs font-medium hover:bg-[#F4D9D5] hover:text-[#7A3A33] transition-colors disabled:opacity-50"
+                  >
+                    {t('dashboard.reject')}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="grid grid-cols-[1fr_280px] gap-4">
         <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
@@ -259,10 +307,34 @@ export default function DashboardPage() {
     setLoading(true);
     setError('');
     try {
-      const data = role === 'teacher'
-        ? await listLessonsForTeacher(user.id)
-        : await listLessonsForStudent(user.id);
-      setLessons(data);
+      // Server resolves which side of the lesson the caller is on.
+      const list = await listMyLessons();
+      setLessons(list);
+
+      // A teacher decides on a request from the student's grade, struggles
+      // and expectations, but lists no longer carry those. Pull them for the
+      // pending requests only — a handful of rows, each authorised
+      // individually — rather than putting PII back into the list payload.
+      if (role === 'teacher') {
+        const pending = list.filter(l => l.status === 'pending');
+        const details = await Promise.all(
+          pending.map(l =>
+            getLessonCounterpart(l.id)
+              .then(d => [l.id, d])
+              .catch(() => [l.id, null]),
+          ),
+        );
+        const byLesson = new Map(details.filter(([, d]) => d));
+        if (byLesson.size > 0) {
+          setLessons(curr =>
+            curr.map(l =>
+              byLesson.has(l.id)
+                ? { ...l, student: { ...(l.student ?? {}), ...byLesson.get(l.id) } }
+                : l,
+            ),
+          );
+        }
+      }
     } catch (e) {
       setError(e.message ?? 'Failed to load lessons.');
     } finally {
@@ -272,11 +344,15 @@ export default function DashboardPage() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
+  // Reconcile from the row the server returns, not from a local guess.
+  const applyUpdate = (updated) =>
+    setLessons(ls => ls.map(l => (l.id === updated.id ? { ...l, ...updated } : l)));
+
   const handleUpdate = async (id, status) => {
     setBusyId(id);
+    setError('');
     try {
-      await updateLessonStatus(id, status);
-      setLessons(ls => ls.map(l => l.id === id ? { ...l, status } : l));
+      applyUpdate(status === 'accepted' ? await acceptLesson(id) : await rejectLesson(id));
     } catch (e) {
       setError(e.message ?? 'Failed to update lesson.');
     } finally {
@@ -285,9 +361,9 @@ export default function DashboardPage() {
   };
 
   const handleMarkPaid = async (id) => {
+    setError('');
     try {
-      await markLessonPaid(id);
-      setLessons(ls => ls.map(l => l.id === id ? { ...l, paid_at: new Date().toISOString() } : l));
+      applyUpdate(await markLessonPaid(id));
     } catch (e) {
       setError(e.message ?? 'Failed to update lesson.');
     }
@@ -320,9 +396,9 @@ export default function DashboardPage() {
             <div className="w-5 h-5 rounded-full border-2 border-[#C8654A] border-t-transparent animate-spin" />
           </div>
         ) : isTeacher ? (
-          <TeacherDashboard lessons={lessons} onUpdate={handleUpdate} onMarkPaid={handleMarkPaid} busyId={busyId} />
+          <TeacherDashboard lessons={lessons} userId={user?.id} onUpdate={handleUpdate} onMarkPaid={handleMarkPaid} busyId={busyId} />
         ) : (
-          <StudentDashboard lessons={lessons} />
+          <StudentDashboard lessons={lessons} userId={user?.id} onUpdate={handleUpdate} busyId={busyId} />
         )}
       </div>
     </>

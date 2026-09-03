@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import Topbar from '@/components/Topbar';
 import { useAuth } from '@/components/AuthProvider';
 import { useLanguage } from '@/components/LanguageProvider';
-import { listStudents, createLessonAsTeacher } from '../../../app/lib/lessons';
-import { getUserProfile } from '../../../app/lib/auth';
+import { scheduleLesson } from '@/lib/api/lessons';
+import { listStudents, getMyProfile } from '@/lib/api/profile';
 
 function todayStr() {
   const d = new Date();
@@ -45,7 +45,7 @@ export default function ScheduleLessonPage() {
 
   useEffect(() => {
     if (!user) return;
-    getUserProfile(user.id)
+    getMyProfile()
       .then(profile => setSubjects((profile?.subjects ?? []).filter(s => s?.name).map(s => s.name)))
       .catch(() => {});
   }, [user]);
@@ -60,7 +60,7 @@ export default function ScheduleLessonPage() {
     setSubmitting(true);
     setError('');
     try {
-      await createLessonAsTeacher({ teacherId: user.id, studentId, date, time, subject, notes });
+      await scheduleLesson({ studentId, date, time, subject, notes });
       router.replace('/lessons');
     } catch (err) {
       setError(err.message ?? 'Failed to schedule lesson.');
@@ -107,7 +107,7 @@ export default function ScheduleLessonPage() {
                 <option value="">{loadingStudents ? t('common.loading') : t('schedule.selectStudent')}</option>
                 {students.map(s => (
                   <option key={s.id} value={s.id}>
-                    {s.name ?? s.email ?? '—'}{s.grade ? ` · ${s.grade}` : ''}
+                    {s.name ?? '—'}{s.headline ? ` · ${s.headline}` : ''}
                   </option>
                 ))}
               </select>

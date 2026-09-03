@@ -18,6 +18,7 @@ const translations = {
     'nav.requestLesson':  'Request Lesson',
     'nav.myLessons':      'My Lessons',
     'nav.findTutor':      'Find a Tutor',
+    'nav.inviteTeacher':  'Invite Teacher',
     'nav.profileSettings':'Profile settings',
     'nav.signOut':        'Sign out',
 
@@ -46,6 +47,7 @@ const translations = {
     'dashboard.calendarSub':     'All requests, accepted and rejected lessons.',
     'dashboard.pendingTitle':    'Pending Requests',
     'dashboard.noPending':       'No pending requests',
+    'dashboard.proposedTitle':   'Lessons your tutor proposed',
     'dashboard.myRequests':      'My Lesson Requests',
     'dashboard.myRequestsSub':   "Requests you've sent to teachers.",
     'dashboard.noRequests':      'No requests yet',
@@ -260,6 +262,7 @@ const translations = {
     'nav.requestLesson':  'Užsakyti pamoką',
     'nav.myLessons':      'Mano pamokos',
     'nav.findTutor':      'Rasti korepetitorių',
+    'nav.inviteTeacher':  'Pakviesti mokytoją',
     'nav.profileSettings':'Profilio nustatymai',
     'nav.signOut':        'Atsijungti',
 
@@ -288,6 +291,7 @@ const translations = {
     'dashboard.calendarSub':     'Visos užklausos, priimtos ir atmestos pamokos.',
     'dashboard.pendingTitle':    'Laukiančios užklausos',
     'dashboard.noPending':       'Nėra laukiančių užklausų',
+    'dashboard.proposedTitle':   'Korepetitoriaus pasiūlytos pamokos',
     'dashboard.myRequests':      'Mano pamokų užklausos',
     'dashboard.myRequestsSub':   'Užklausos, kurias išsiuntėte korepetitoriams.',
     'dashboard.noRequests':      'Dar nėra užklausų',

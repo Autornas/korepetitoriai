@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Topbar from '@/components/Topbar';
 import { useAuth } from '@/components/AuthProvider';
 import { useLanguage } from '@/components/LanguageProvider';
-import { listTeachers, createLessonRequest, setLessonMeetLink } from '../../../app/lib/lessons';
-import { createMeetEvent } from '../../../app/lib/google';
+import { requestLesson, createMeetLink } from '@/lib/api/lessons';
+import { listTeachers } from '@/lib/api/profile';
+import { getGoogleAccessToken } from '@/lib/api/auth';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -134,7 +135,7 @@ function SlotCalendar({ availSet, weekStart, selectedDate, selectedHour, onSelec
 export default function CreateLessonPage() {
   const router = useRouter();
   const params = useSearchParams();
-  const { user, googleToken } = useAuth();
+  const { user } = useAuth();
   const { t } = useLanguage();
 
   const [teachers, setTeachers] = useState([]);
@@ -191,23 +192,17 @@ export default function CreateLessonPage() {
     setSubmitting(true);
     setError('');
     try {
-      const lesson = await createLessonRequest({ studentId: user.id, teacherId, date, time, subject, notes });
+      const lesson = await requestLesson({ teacherId, date, time, subject, notes });
 
-      // Best-effort: create a Google Calendar event with a Meet link. Only
-      // possible if the student signed in with Google in this session.
-      if (googleToken && teacher?.email) {
+      // Best-effort: ask the server to create a Google Calendar event with a
+      // Meet link. Only possible if the student signed in with Google, and
+      // the token is read on demand rather than held in app state.
+      const googleAccessToken = await getGoogleAccessToken();
+      if (googleAccessToken) {
         try {
-          const { meetLink } = await createMeetEvent({
-            token: googleToken,
-            lessonId: lesson.id,
-            summary: subject ? `${subject} lesson with ${teacher.name ?? ''}`.trim() : `Lesson with ${teacher.name ?? ''}`.trim(),
-            description: notes || '',
-            date,
-            time: `${time}:00`,
-            durationMin: 60,
-            attendeeEmails: [user.email, teacher.email],
-          });
-          if (meetLink) await setLessonMeetLink(lesson.id, meetLink);
+          // The server builds the attendee list from the lesson itself, so the
+          // browser cannot decide who gets invited.
+          await createMeetLink(lesson.id, googleAccessToken);
         } catch (calendarErr) {
           // Don't block the booking on calendar failures — the lesson still
           // exists and JoinSection falls back to a Jitsi room.

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
-import { loginUser, loginWithGoogle } from '../../../app/lib/auth';
+import { loginUser, loginWithGoogle } from '@/lib/api/auth';
 import { useAuth } from '@/components/AuthProvider';
 
 function InputField({ label, id, type = "text", value, onChange, error, placeholder, autoComplete, children }) {

@@ -1,16 +1,9 @@
 'use client';
 
-import { useAuth } from './AuthProvider';
 import { useLanguage } from './LanguageProvider';
 
 export default function Topbar({ crumbs }) {
-  const { isAdmin, role, actualRole, setRoleOverride } = useAuth();
   const { lang, setLang, t } = useLanguage();
-
-  const handleToggle = () => {
-    const next = role === 'teacher' ? 'student' : 'teacher';
-    setRoleOverride(next === actualRole ? null : next);
-  };
 
   const toggleLang = () => setLang(lang === 'en' ? 'lt' : 'en');
 
@@ -40,19 +33,6 @@ export default function Topbar({ crumbs }) {
         <span>{lang.toUpperCase()}</span>
       </button>
 
-      {isAdmin && role && (
-        <button
-          onClick={handleToggle}
-          title={`Currently viewing as ${role}. Click to switch.`}
-          className="flex items-center gap-2 px-2.5 py-1 rounded-md border border-[#E8B7A2] bg-[#F6E4DA] text-[#B0533A] text-[11px] font-mono hover:bg-[#B0533A]/20 transition-colors"
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-[#C8654A]" />
-          <span>view: {role}</span>
-          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
-            <path d="M3 6h8l-2-2M13 10H5l2 2" />
-          </svg>
-        </button>
-      )}
     </div>
   );
 }

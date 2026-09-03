@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Topbar from '@/components/Topbar';
 import { useAuth } from '@/components/AuthProvider';
 import { useLanguage } from '@/components/LanguageProvider';
-import { getUserProfile, saveUserProfile, uploadProfilePhoto, signOut } from '../../../app/lib/auth';
+import { getMyProfile, saveMyProfile, uploadProfilePhoto } from '@/lib/api/profile';
+import { signOut } from '@/lib/api/auth';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8);
@@ -123,7 +124,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    getUserProfile(user.id).then(profile => {
+    getMyProfile().then(profile => {
       if (!profile) return;
       if (profile.photo_url) setPhotoURL(profile.photo_url);
       if (profile.name) setName(profile.name);
@@ -147,10 +148,13 @@ export default function ProfilePage() {
     if (!file || !user) return;
     setPhotoUploading(true);
     try {
-      const url = await uploadProfilePhoto(user.id, file);
-      setPhotoURL(url);
-    } catch {
-      // silently ignore upload errors; user can retry
+      const { photoUrl } = await uploadProfilePhoto(file);
+      setPhotoURL(photoUrl);
+      setLoadError('');
+    } catch (err) {
+      // The server rejects oversized files and anything that is not a real
+      // JPEG/PNG/WebP, so the reason is worth showing rather than swallowing.
+      setLoadError(err?.message ?? 'Could not upload that image.');
     } finally {
       setPhotoUploading(false);
       e.target.value = '';
@@ -175,7 +179,7 @@ export default function ProfilePage() {
     setSaving(true);
     setSaveStatus('idle');
     try {
-      await saveUserProfile(user.id, {
+      await saveMyProfile({
         photo_url: photoURL,
         name,
         phone: phone.trim(),

@@ -1,145 +1,106 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '../../app/lib/supabase';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { fetchSession, onAuthStateChange } from '@/lib/api/auth';
 
-// Hardcoded admin emails — these users see a role-switcher toggle in the
-// Topbar that overrides the role *for UI rendering only*. RLS still applies
-// the actual profiles.role, so DB writes behave per the real role.
-const ADMIN_EMAILS = ['autornas123@gmail.com'];
+/**
+ * Identity for the whole app, resolved by the server.
+ *
+ * Previously this component read the Supabase session in the browser, queried
+ * `profiles` directly, and upserted a row when none existed — so the `role`
+ * every guard keyed off was assembled client-side from data the client could
+ * influence. Now a single call to /api/auth/session returns the user and the
+ * profile the server verified, and the token lifecycle stays with the SDK.
+ */
+/** Never leave the UI gated on a session lookup for longer than this. */
+const SESSION_TIMEOUT_MS = 8000;
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [roleOverride, setRoleOverrideState] = useState(null);
-  const [googleToken, setGoogleToken] = useState(null);
 
-  // Hydrate the override from sessionStorage on mount (avoids SSR mismatch).
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const stored = sessionStorage.getItem('adminRoleOverride');
-    if (stored === 'student' || stored === 'teacher') setRoleOverrideState(stored);
+  const refresh = useCallback(async (signal) => {
+    try {
+      const session = await fetchSession({ signal });
+      if (signal?.aborted) return;
+      setUser(session?.user ?? null);
+      setProfile(session?.profile ?? null);
+      setIsAdmin(Boolean(session?.isAdmin));
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      setUser(null);
+      setProfile(null);
+      setIsAdmin(false);
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
   }, []);
 
-  const setRoleOverride = (next) => {
-    if (typeof window !== 'undefined') {
-      if (next) sessionStorage.setItem('adminRoleOverride', next);
-      else sessionStorage.removeItem('adminRoleOverride');
-    }
-    setRoleOverrideState(next);
-  };
-
-  // 1) Resolve current session up front. Don't rely on onAuthStateChange to
-  //    flip `loading` — its INITIAL_SESSION event can be delayed by token
-  //    refresh / cross-tab Web Locks and wedge the UI on reload.
+  // Resolve the session once on mount.
+  //
+  // The abort controller also carries a hard deadline. Without it, a request
+  // that never settles leaves `loading` true forever and ProtectedLayout spins
+  // on a blank screen — the app looks hung rather than signed out. Treat a
+  // stalled session lookup as "not signed in" and let the user reach /login.
   useEffect(() => {
-    if (!supabase) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
+    const controller = new AbortController();
+    // Distinguishes "the request ran out of time" from "the effect was torn
+    // down". Only the first should release the loading gate — releasing it on
+    // teardown would bounce the user to /login during StrictMode's double
+    // mount in development.
+    let timedOut = false;
 
-    let cancelled = false;
+    const deadline = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, SESSION_TIMEOUT_MS);
 
-    // Hard escape hatch — if the SDK wedges, unblock the UI anyway.
-    const safety = setTimeout(() => {
-      if (!cancelled) setLoading(false);
-    }, 4000);
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (cancelled) return;
-      setUser(session?.user ?? null);
-      if (session?.provider_token) setGoogleToken(session.provider_token);
-      setLoading(false);
-      clearTimeout(safety);
-    }).catch(() => {
-      if (cancelled) return;
-      setUser(null);
-      setLoading(false);
-      clearTimeout(safety);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      // Listener only handles future changes — never gates `loading`.
-      setUser(session?.user ?? null);
-      // provider_token is only present right after OAuth sign-in. Cache it
-      // so Calendar API calls within this session can use it.
-      if (session?.provider_token) setGoogleToken(session.provider_token);
+    refresh(controller.signal).finally(() => {
+      clearTimeout(deadline);
+      // `refresh` skips its own setLoading when the signal aborted, so clear
+      // the gate here instead; otherwise a timeout would wedge the UI.
+      if (timedOut) setLoading(false);
     });
 
     return () => {
-      cancelled = true;
-      clearTimeout(safety);
-      subscription.unsubscribe();
+      clearTimeout(deadline);
+      controller.abort();
     };
-  }, []);
+  }, [refresh]);
 
-  // 2) Profile fetch. Seeds a row on first sign-in so RLS-gated queries
-  //    (e.g. lessons insert/update) actually see profiles.role.
+  // Re-resolve on sign-in / sign-out. Token refreshes do not change identity,
+  // so they do not need a round trip.
   useEffect(() => {
-    if (!supabase || !user) {
-      setProfile(null);
-      setProfileLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    setProfileLoading(true);
-
-    (async () => {
-      try {
-        const { data: existing } = await supabase
-          .from('profiles').select('*').eq('id', user.id).maybeSingle();
-
-        if (cancelled) return;
-
-        const pendingRole = typeof window !== 'undefined'
-          ? sessionStorage.getItem('pendingGoogleRole')
-          : null;
-        if (typeof window !== 'undefined') sessionStorage.removeItem('pendingGoogleRole');
-
-        if (existing) {
-          // Existing profile is authoritative. Never overwrite role from
-          // pendingGoogleRole — login flow defaults it to 'student' and would
-          // silently demote teachers signing in via Google.
-          setProfile(existing);
-        } else {
-          // First sign-in: seed a row so the role lives in the DB, not just
-          // user_metadata. RLS (lessons insert/update) reads profiles.role.
-          const role = pendingRole ?? user.user_metadata?.role ?? 'student';
-          const name = user.user_metadata?.full_name ?? null;
-          const seed = { id: user.id, role, name };
-          const { data: created } = await supabase
-            .from('profiles').upsert(seed).select().maybeSingle();
-          if (!cancelled) setProfile(created ?? seed);
-        }
-      } finally {
-        if (!cancelled) setProfileLoading(false);
+    return onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+        refresh();
       }
-    })();
+    });
+  }, [refresh]);
 
-    return () => { cancelled = true; };
-  }, [user?.id]);
-
-  const actualRole = profile?.role ?? user?.user_metadata?.role ?? null;
-  const isAdmin = !!user?.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
-  const role = isAdmin && roleOverride ? roleOverride : actualRole;
+  const role = profile?.role ?? null;
 
   return (
-    <AuthContext.Provider value={{
-      user, profile, setProfile, loading, profileLoading,
-      role, actualRole, isAdmin, roleOverride, setRoleOverride,
-      googleToken,
-    }}>
+    <AuthContext.Provider
+      value={{ user, profile, setProfile, loading, role, isAdmin, refresh }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  return useContext(AuthContext) ?? {
+    user: null,
+    profile: null,
+    setProfile: () => {},
+    loading: true,
+    role: null,
+    isAdmin: false,
+    refresh: async () => {},
+  };
 }

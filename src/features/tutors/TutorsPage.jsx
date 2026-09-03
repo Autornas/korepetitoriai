@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Topbar from '@/components/Topbar';
 import { useLanguage } from '@/components/LanguageProvider';
-import { listTeachers } from '../../../app/lib/lessons';
+import { listTeachers } from '@/lib/api/profile';
 
 const DAY_KEYS = ['days.mon', 'days.tue', 'days.wed', 'days.thu', 'days.fri', 'days.sat', 'days.sun'];
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8);

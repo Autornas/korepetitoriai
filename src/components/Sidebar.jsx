@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from './AuthProvider';
 import { useLanguage } from './LanguageProvider';
-import { signOut } from '../../app/lib/auth';
+import { signOut } from '@/lib/api/auth';
 
 const Icons = {
   Grid:     () => <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>,
@@ -32,12 +32,17 @@ const sections = [
       { href: '/tutors',         labelKey: 'nav.findTutor',      icon: 'Search', studentOnly: true },
     ],
   },
+  {
+    items: [
+      { href: '/admin/teachers', labelKey: 'nav.inviteTeacher',  icon: 'Plus',   adminOnly: true },
+    ],
+  },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router   = useRouter();
-  const { user, profile, role } = useAuth();
+  const { user, profile, role, isAdmin } = useAuth();
   const { t } = useLanguage();
 
   const handleSignOut = async () => {
@@ -54,7 +59,12 @@ export default function Sidebar() {
   // While role is still resolving (null), studentOnly items stay hidden so
   // teachers never flash student UI on first paint.
   const visibleSections = sections
-    .map(sec => ({ ...sec, items: sec.items.filter(it => !it.studentOnly || role === 'student') }))
+    .map(sec => ({
+      ...sec,
+      items: sec.items.filter(it =>
+        (!it.studentOnly || role === 'student') && (!it.adminOnly || isAdmin)
+      ),
+    }))
     .filter(sec => sec.items.length > 0);
 
   return (

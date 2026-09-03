@@ -3,16 +3,32 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/components/LanguageProvider';
+import { getLessonCounterpart } from '@/lib/api/lessons';
 
 const JOIN_BEFORE_MS = 15 * 60 * 1000; // 15 min
 const JOIN_AFTER_MS  = 60 * 60 * 1000; // 60 min
+
+const ALLOWED_MEET_HOSTS = new Set(['meet.google.com', 'meet.jit.si']);
 
 function meetUrlFor(lesson) {
   // Prefer the Google Meet link generated when the lesson was booked.
   // Fall back to a deterministic Jitsi room (same URL for both participants)
   // when no Meet link is stored — e.g. student didn't sign in with Google.
-  if (lesson.meet_link) return lesson.meet_link;
-  return `https://meet.jit.si/Korepetitor-${lesson.id}`;
+  const fallback = `https://meet.jit.si/Korepetitor-${lesson.id}`;
+  if (!lesson.meet_link) return fallback;
+
+  // New links are validated before they are stored, but rows written before
+  // that check exist, and this value ends up in an href the counterpart
+  // clicks. Re-check rather than trust the row.
+  try {
+    const url = new URL(lesson.meet_link);
+    if (url.protocol === 'https:' && ALLOWED_MEET_HOSTS.has(url.hostname)) {
+      return url.toString();
+    }
+  } catch {
+    // fall through
+  }
+  return fallback;
 }
 
 function formatCountdown(ms) {
@@ -35,7 +51,9 @@ function JoinSection({ lesson }) {
     return () => clearInterval(id);
   }, []);
 
-  if (lesson.status === 'rejected') return null;
+  // Mirrors the server's rule in getRoomAccess: only an accepted lesson has
+  // a room. The countdown below is presentation; the gate is server-side.
+  if (lesson.status !== 'accepted') return null;
 
   const startMs = new Date(`${lesson.date}T${lesson.time}`).getTime();
   const diff = startMs - now;
@@ -176,7 +194,22 @@ function PaymentSection({ lesson, perspective, teacher, onMarkPaid }) {
 export default function LessonDetailModal({ lesson, perspective, onClose, onMarkPaid }) {
   const { t } = useLanguage();
   // perspective: 'teacher' (viewing student) or 'student' (viewing tutor)
-  const p = perspective === 'teacher' ? lesson.student : lesson.teacher;
+  const card = perspective === 'teacher' ? lesson.student : lesson.teacher;
+
+  // Lists carry only the public card. Contact details, the student's learning
+  // notes and the tutor's IBAN are released per lesson, by an endpoint that
+  // checks participation first — so they are fetched when the modal opens.
+  const [details, setDetails] = useState(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getLessonCounterpart(lesson.id, { signal: controller.signal })
+      .then(setDetails)
+      .catch(() => {});
+    return () => controller.abort();
+  }, [lesson.id]);
+
+  const p = { ...(card ?? {}), ...(details ?? {}) };
   const initials = (p?.name ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   const isStudentView = perspective === 'student';

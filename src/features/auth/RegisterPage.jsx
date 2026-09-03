@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
-import { registerUser, loginWithGoogle } from '../../../app/lib/auth';
+import { registerUser, loginWithGoogle } from '@/lib/api/auth';
 import { useAuth } from '@/components/AuthProvider';
-
-const ROLES = { TEACHER: "teacher", STUDENT: "student" };
 
 function InputField({ label, id, type = "text", value, onChange, error, placeholder, autoComplete }) {
   const [focused, setFocused] = useState(false);
@@ -74,7 +72,7 @@ function friendlyError(err) {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, refresh } = useAuth();
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -82,7 +80,6 @@ export default function RegisterPage() {
     }
   }, [user, authLoading, router]);
 
-  const [role, setRole] = useState(ROLES.STUDENT);
   const [fields, setFields] = useState({ name: "", email: "", password: "", confirm: "" });
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -115,14 +112,20 @@ export default function RegisterPage() {
     setFirebaseError("");
     setInfoMessage("");
     try {
-      const { session } = await registerUser({ name: fields.name, email: fields.email, password: fields.password, role });
-      if (!session) {
-        // Email confirmation is required — no auth state change will fire
+      const { signedIn } = await registerUser({
+        name: fields.name,
+        email: fields.email,
+        password: fields.password,
+      });
+      if (!signedIn) {
+        // Email confirmation is switched on for this project.
         setLoading(false);
         setInfoMessage("Account created! Check your inbox to confirm your email, then sign in.");
         return;
       }
-      // Session exists → AuthProvider's onAuthStateChange will fire → useEffect redirects
+      // Sign-up ran on the server, so no browser auth event fires — pull the
+      // new session down explicitly; the redirect effect takes it from there.
+      await refresh();
     } catch (err) {
       setFirebaseError(friendlyError(err));
       setLoading(false);
@@ -133,7 +136,7 @@ export default function RegisterPage() {
     setLoading(true);
     setFirebaseError("");
     try {
-      await loginWithGoogle(role);
+      await loginWithGoogle();
       // Redirects to Google — page navigates away, loading stays true
     } catch (err) {
       setFirebaseError(friendlyError(err));
@@ -174,35 +177,6 @@ export default function RegisterPage() {
               {infoMessage}
             </div>
           )}
-
-          {/* Role selector */}
-          <div className="mb-5">
-            <p className="text-sm font-medium text-[#5A4A38] mb-2">I am a</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setRole(ROLES.TEACHER)}
-                className={`py-2.5 rounded-xl text-sm font-semibold border transition-all duration-150
-                  ${role === ROLES.TEACHER
-                    ? 'bg-[#C8654A] border-[#C8654A] text-white shadow-lg shadow-[#B0533A]/25'
-                    : 'bg-[#F4ECDF]/60 border-[#DCC9A8] text-[#5A4A38] hover:text-white hover:border-[#C8654A]'
-                  }`}
-              >
-                👩‍🏫 Teacher
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole(ROLES.STUDENT)}
-                className={`py-2.5 rounded-xl text-sm font-semibold border transition-all duration-150
-                  ${role === ROLES.STUDENT
-                    ? 'bg-[#C8654A] border-[#C8654A] text-white shadow-lg shadow-[#B0533A]/25'
-                    : 'bg-[#F4ECDF]/60 border-[#DCC9A8] text-[#5A4A38] hover:text-white hover:border-[#C8654A]'
-                  }`}
-              >
-                🎓 Student
-              </button>
-            </div>
-          </div>
 
           {/* Google button */}
           <button
@@ -280,7 +254,7 @@ export default function RegisterPage() {
                 }
               `}
             >
-              {loading ? 'Creating account…' : `Create ${role === ROLES.TEACHER ? "Teacher" : "Student"} Account`}
+              {loading ? 'Creating account…' : 'Create Account'}
             </button>
           </form>
         </div>

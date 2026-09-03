@@ -1,9 +1,10 @@
 'use client';
 
 // Collaborative whiteboard powered by Excalidraw + Supabase Realtime.
-// - Each scene change broadcasts the full element set on a separate channel
-//   (`lesson-board:<lessonId>`). Full-snapshot sync is fine for typical
-//   lesson-sized boards and avoids Excalidraw's reconciler complexity.
+// - Each scene change broadcasts the full element set on the server-derived
+//   `channelName` (see deriveRoomChannel in src/server/services/lessons.js).
+//   Full-snapshot sync is fine for typical lesson-sized boards and avoids
+//   Excalidraw's reconciler complexity.
 // - Echo prevention uses Excalidraw's `getSceneVersion`: we never re-broadcast
 //   a version we just applied from a peer.
 // - On subscribe we ask any existing peer for their current scene so a late
@@ -12,11 +13,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Excalidraw, getSceneVersion } from '@excalidraw/excalidraw';
 import '@excalidraw/excalidraw/index.css';
-import { supabase } from '../../../app/lib/supabase';
+import { getBrowserSupabase } from '@/lib/supabase/browser';
 
 const THROTTLE_MS = 80;
 
-export default function CollabWhiteboard({ lessonId, userId }) {
+export default function CollabWhiteboard({ channelName, userId }) {
   const [api, setApi] = useState(null);
   const apiRef = useRef(null);
   const channelRef = useRef(null);
@@ -65,8 +66,12 @@ export default function CollabWhiteboard({ lessonId, userId }) {
   }, [sendScene]);
 
   useEffect(() => {
-    if (!supabase || !lessonId) return;
-    const channel = supabase.channel(`lesson-board:${lessonId}`, {
+    const supabase = getBrowserSupabase();
+    if (!supabase || !channelName) return;
+
+    // Still not RLS-enforced — see the note in VideoCall and at the top of
+    // realtime_lesson_rooms.sql.
+    const channel = supabase.channel(channelName, {
       config: { broadcast: { self: false } },
     });
     channelRef.current = channel;
@@ -110,7 +115,7 @@ export default function CollabWhiteboard({ lessonId, userId }) {
       supabase.removeChannel(channel);
       channelRef.current = null;
     };
-  }, [lessonId, userId]);
+  }, [channelName, userId]);
 
   const onChange = useCallback((elements) => {
     const version = getSceneVersion(elements);

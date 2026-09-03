@@ -6,14 +6,15 @@ import Topbar from '@/components/Topbar';
 import { useAuth } from '@/components/AuthProvider';
 import { useLanguage } from '@/components/LanguageProvider';
 import {
-  listConversationPartners,
-  listMessagesWith,
+  listConversations,
+  listThread,
   sendMessage,
-  markConversationRead,
-  getProfileBrief,
-} from '../../../app/lib/messages';
+  markThreadRead,
+} from '@/lib/api/messages';
 
 const POLL_MS = 5000;
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function initialsOf(name) {
   return (name ?? '?').split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -52,7 +53,11 @@ export default function MessagesPage() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const searchParams = useSearchParams();
-  const initialPartner = searchParams.get('with');
+  // Only a well-formed id is ever accepted from the URL. The server validates
+  // it again and checks the relationship, but rejecting it here keeps a bad
+  // deep link from producing a confusing request.
+  const withParam = searchParams.get('with');
+  const initialPartner = withParam && UUID_RE.test(withParam) ? withParam : null;
 
   const [partners, setPartners] = useState([]);
   const [partnersLoaded, setPartnersLoaded] = useState(false);
@@ -64,33 +69,28 @@ export default function MessagesPage() {
   const messagesEndRef = useRef(null);
   const scrollerRef = useRef(null);
 
+  // The conversation list is now exactly who you may message — an accepted
+  // shared lesson. There is no longer a "stranger" case to patch in from a
+  // deep link, so the old getProfileBrief fallback is gone.
   const refreshPartners = useCallback(async () => {
     if (!user) return;
     try {
-      const list = await listConversationPartners(user.id);
-      setPartners(prev => {
-        if (initialPartner && !list.some(p => p.id === initialPartner) && !prev.some(p => p.id === initialPartner)) {
-          getProfileBrief(initialPartner).then(p => {
-            if (p) setPartners(curr => curr.some(x => x.id === p.id) ? curr : [{ ...p, lastMessage: null, unread: 0 }, ...curr]);
-          }).catch(() => {});
-        }
-        return list;
-      });
+      setPartners(await listConversations());
     } catch (e) {
       setError(e.message ?? t('messages.failedLoadConvs'));
     } finally {
       setPartnersLoaded(true);
     }
-  }, [user, initialPartner, t]);
+  }, [user, t]);
 
   const refreshMessages = useCallback(async () => {
     if (!user || !activeId) return;
     try {
-      const list = await listMessagesWith(user.id, activeId);
+      const list = await listThread(activeId);
       setMessages(list);
       const hasUnread = list.some(m => m.receiver_id === user.id && !m.read_at);
       if (hasUnread) {
-        markConversationRead(user.id, activeId).catch(() => {});
+        markThreadRead(activeId).catch(() => {});
       }
     } catch (e) {
       setError(e.message ?? t('messages.failedLoadMessages'));
@@ -136,13 +136,13 @@ export default function MessagesPage() {
     setError('');
     setDraft('');
     try {
-      const msg = await sendMessage({ senderId: user.id, receiverId: activeId, body });
+      const msg = await sendMessage({ receiverId: activeId, body });
       setMessages(prev => [...prev, msg]);
       refreshPartners();
     } catch (err) {
       setDraft(body);
-      const code = err?.code;
-      if (code === '42501' || /row-level security/i.test(err?.message ?? '')) {
+      // The server answers 403 when there is no accepted shared lesson.
+      if (err?.status === 403) {
         setError(t('messages.rlsError'));
       } else {
         setError(err.message ?? t('messages.failedSend'));

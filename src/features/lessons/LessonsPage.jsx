@@ -8,11 +8,11 @@ import { useLanguage } from '@/components/LanguageProvider';
 import LessonDetailModal, { STATUS_PILL } from './LessonDetailModal';
 import WeekCalendar from './WeekCalendar';
 import {
-  listLessonsForStudent,
-  listLessonsForTeacher,
-  updateLessonStatus,
+  listMyLessons,
+  acceptLesson,
+  rejectLesson,
   markLessonPaid,
-} from '../../../app/lib/lessons';
+} from '@/lib/api/lessons';
 
 const TABS = [
   { key: 'All',      labelKey: 'lessons.tabAll' },
@@ -52,10 +52,9 @@ export default function LessonsPage() {
     setLoading(true);
     setError('');
     try {
-      const data = isTeacher
-        ? await listLessonsForTeacher(user.id)
-        : await listLessonsForStudent(user.id);
-      setLessons(data);
+      // The server picks student_id vs teacher_id from the caller's own
+      // profile, so the client no longer says whose lessons it wants.
+      setLessons(await listMyLessons());
     } catch (e) {
       setError(e.message ?? t('lessons.failedLoad'));
     } finally {
@@ -70,11 +69,16 @@ export default function LessonsPage() {
     return lessons.filter(l => l.status === tab.toLowerCase());
   }, [tab, lessons]);
 
+  // The server returns the updated row, so state is reconciled from the
+  // response rather than optimistically guessed.
+  const applyUpdate = (updated) =>
+    setLessons(ls => ls.map(l => (l.id === updated.id ? { ...l, ...updated } : l)));
+
   const handleStatus = async (id, status) => {
     setBusyId(id);
+    setError('');
     try {
-      await updateLessonStatus(id, status);
-      setLessons(ls => ls.map(l => l.id === id ? { ...l, status } : l));
+      applyUpdate(status === 'accepted' ? await acceptLesson(id) : await rejectLesson(id));
     } catch (e) {
       setError(e.message ?? t('lessons.failedUpdate'));
     } finally {
@@ -83,9 +87,9 @@ export default function LessonsPage() {
   };
 
   const handleMarkPaid = async (id) => {
+    setError('');
     try {
-      await markLessonPaid(id);
-      setLessons(ls => ls.map(l => l.id === id ? { ...l, paid_at: new Date().toISOString() } : l));
+      applyUpdate(await markLessonPaid(id));
     } catch (e) {
       setError(e.message ?? t('lessons.failedUpdate'));
     }
@@ -252,7 +256,7 @@ export default function LessonsPage() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
-                      {isTeacher && l.status === 'pending' && (
+                      {l.status === 'pending' && l.created_by !== user?.id && (
                         <>
                           <button
                             disabled={busyId === l.id}
@@ -270,7 +274,7 @@ export default function LessonsPage() {
                           </button>
                         </>
                       )}
-                      {isTeacher && l.status === 'accepted' && (
+                      {l.status === 'accepted' && (
                         <button
                           disabled={busyId === l.id}
                           onClick={() => handleStatus(l.id, 'rejected')}
@@ -279,15 +283,9 @@ export default function LessonsPage() {
                           {t('lessons.cancel')}
                         </button>
                       )}
-                      {isTeacher && l.status === 'rejected' && (
-                        <button
-                          disabled={busyId === l.id}
-                          onClick={() => handleStatus(l.id, 'accepted')}
-                          className="px-3 py-2 rounded-lg bg-transparent border border-[#DCC9A8] text-[#5A4A38] text-xs hover:bg-[#677A4D]/10 hover:text-[#4F5F36] transition-colors disabled:opacity-50"
-                        >
-                          {t('lessons.accept')}
-                        </button>
-                      )}
+                      {/* A rejected lesson is final — reviving one would let a
+                          single party resurrect a booking the other declined.
+                          Book again instead. */}
                       {!isTeacher && l.status === 'accepted' && (
                         <button className="px-3 py-2 rounded-lg bg-[#C8654A] text-white text-xs font-medium hover:bg-[#B0533A] transition-colors">
                           {t('lessons.join')}

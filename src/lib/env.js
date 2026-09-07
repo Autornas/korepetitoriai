@@ -65,6 +65,17 @@ export const serverEnv = {
     const raw = read('ADMIN_EMAILS');
     return raw ? raw.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean) : [];
   },
+  /**
+   * Canonical public origin (no trailing slash), used to build links that
+   * leave the server — e.g. the teacher-invite email's redirect. Without
+   * this, Supabase falls back to its dashboard "Site URL", which is
+   * whatever was typed in last (often a developer's localhost).
+   */
+  get siteUrl() {
+    assertServerOnly();
+    const raw = read('SITE_URL');
+    return raw ? raw.replace(/\/+$/, '') : null;
+  },
 };
 
 /**

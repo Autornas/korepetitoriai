@@ -45,6 +45,13 @@ export async function loginWithGoogle() {
   if (error) throw error;
 }
 
+/** Sets the password on the current session — used after an invite/reset link signs the user in. */
+export async function setPassword({ password }) {
+  const supabase = requireClient();
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+}
+
 export async function signOut() {
   const supabase = getBrowserSupabase();
   if (supabase) await supabase.auth.signOut();

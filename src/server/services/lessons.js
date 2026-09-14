@@ -227,23 +227,30 @@ export async function setLessonMeetLink(ctx, lessonId, meetLink) {
  * this project cannot install (see realtime_lesson_rooms.sql). Until then,
  * anyone who can name the channel can subscribe to it.
  *
- * The lesson's own id is a bad channel name for that reason: it is the same
- * id that sits in the room's own URL (`/lessons/<id>/call`), so it is
+ * The lesson's own id alone is a bad channel name for that reason: it is the
+ * same id that sits in the room's own URL (`/lessons/<id>/call`), so it is
  * whatever browser history, a referer header, or a pasted link would expose.
- * HMAC-ing it with a server-only secret breaks that link — the channel name
- * is no longer derivable from anything the URL, logs, or the lesson row
- * leak. It only ever reaches a client through this authorised endpoint.
+ * Appending an HMAC of it, keyed by a server-only secret, breaks that link —
+ * knowing the lesson id is no longer enough to construct the channel name,
+ * because the digest cannot be computed without the secret. It only ever
+ * reaches a client through this authorised endpoint.
  *
- * Still not access control: whoever holds the resulting string can join, the
- * same as before. This narrows *how* that string can leak, it does not
- * remove the possibility.
+ * The lesson id stays in the topic *next to* the digest on purpose, so
+ * `lesson_id_from_topic` (realtime_lesson_rooms.sql) can resolve a topic back
+ * to a lesson and check participation in SQL once those policies can be
+ * installed. A digest-only topic matched nothing, which would have made part 2
+ * of that migration deny every subscribe.
+ *
+ * Still not access control on its own: whoever holds the resulting string can
+ * join until those policies exist. This narrows *how* that string can leak, it
+ * does not remove the possibility.
  */
 function deriveRoomChannel(lessonId, kind) {
   const secret = serverEnv.lessonRoomSecret;
   if (!secret) throw serviceUnavailable('Lesson room signalling is not configured.');
 
   const digest = createHmac('sha256', secret).update(`${kind}:${lessonId}`).digest('hex');
-  return `lesson-${kind}:${digest.slice(0, 32)}`;
+  return `lesson-${kind}:${lessonId}.${digest.slice(0, 32)}`;
 }
 
 /**

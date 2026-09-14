@@ -179,8 +179,12 @@ export default function ProfilePage() {
     setSaving(true);
     setSaveStatus('idle');
     try {
+      // `photo_url` is deliberately not sent: the avatar upload endpoint is the
+      // only thing that writes it, right after it has validated the file and
+      // put the object in this user's own folder. The PATCH schema drops the
+      // field anyway, and the DB trigger added in security_hardening_2.sql now
+      // rejects any value that is not an avatar object belonging to the caller.
       await saveMyProfile({
-        photo_url: photoURL,
         name,
         phone: phone.trim(),
         headline,

@@ -48,7 +48,20 @@
 
 begin;
 
--- Topic looks like `lesson-call:<uuid>` or `lesson-board:<uuid>`.
+-- Topic looks like `lesson-call:<uuid>.<hmac>` or `lesson-board:<uuid>.<hmac>`,
+-- where <hmac> is the first 32 hex characters of
+-- HMAC-SHA256(LESSON_ROOM_SECRET, '<kind>:<uuid>'). See deriveRoomChannel in
+-- src/server/services/lessons.js.
+--
+-- Why both halves are in the topic: the HMAC is what stops a third party who
+-- knows a lesson id (from browser history, a referer, a pasted link) from
+-- constructing the channel name, since they do not hold the secret. The plain
+-- uuid alongside it is what lets *this* function resolve the topic back to a
+-- lesson so the policies below can check participation. An earlier revision
+-- carried only the digest, which meant these policies could never match any
+-- real topic -- applying part 2 would have denied every subscribe and broken
+-- the lesson room outright.
+--
 -- Returns null for any other shape, which fails both policies below.
 create or replace function public.lesson_id_from_topic(p_topic text)
 returns uuid
@@ -58,10 +71,10 @@ as $$
 declare
   v_id text;
 begin
-  if p_topic !~ '^lesson-(call|board):[0-9a-fA-F-]{36}$' then
+  if p_topic !~ '^lesson-(call|board):[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\.[0-9a-f]{32}$' then
     return null;
   end if;
-  v_id := split_part(p_topic, ':', 2);
+  v_id := split_part(split_part(p_topic, ':', 2), '.', 1);
   return v_id::uuid;
 exception
   when others then

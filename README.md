@@ -114,13 +114,21 @@ The SQL for `profiles`, `lessons`, `messages`, plus the RLS policies live in [`d
 8. `messages.sql`
 9. `storage_avatars.sql`
 10. `security_hardening.sql`
-11. `realtime_lesson_rooms.sql` — part 2 (policies) cannot be applied; see "Known gap" below
+11. `security_hardening_2.sql`
+12. `realtime_lesson_rooms.sql` — part 2 (policies) cannot be applied; see "Known gap" below
 
 > **Take a backup before step 10.** `security_hardening.sql` revokes column
 > privileges and replaces policies — the app assumes it has run. `npm run
 > backup:db` snapshots the data first.
 >
-> Step 11 applies only in part: its helper functions install, but the policies
+> Step 11 adds the `BEFORE UPDATE` triggers that enforce the rules a policy
+> cannot express, because `WITH CHECK` sees only the new row and never the old
+> one: the lesson status machine, write-once `paid_at` (teacher only), and the
+> `photo_url` / `meet_link` allow lists. Without it those three rules live only
+> in the API, which a direct PostgREST call skips — the anon key is in the
+> browser bundle, so that is not a hypothetical.
+>
+> Step 12 applies only in part: its helper functions install, but the policies
 > it contains need an owner role Supabase does not hand out. See
 > **Known gap** below.
 
@@ -263,11 +271,18 @@ is *how hard the name is to get*. The channel names used to be
 `lesson-call:<lessonId>` / `lesson-board:<lessonId>` — the same id that sits
 in the room's own URL, so browser history, a referer header, or a pasted link
 was enough. `getRoomAccess` (`src/server/services/lessons.js`) now derives the
-channel name as an HMAC of the lesson id under a server-only
-`LESSON_ROOM_SECRET`, and hands it out only after confirming the caller is a
-participant and the join window is open. The lesson id itself stays
-meaningful (it is still how `/api/lessons/<id>` and friends are addressed);
-it just no longer doubles as the realtime channel name.
+channel name as `lesson-<kind>:<lessonId>.<hmac>`, where the digest is
+HMAC-SHA256 of the lesson id under a server-only `LESSON_ROOM_SECRET`, and
+hands it out only after confirming the caller is a participant and the join
+window is open. Knowing the lesson id is no longer enough to name the channel,
+because the digest cannot be computed without the secret.
+
+The lesson id stays in the topic next to the digest on purpose, so
+`lesson_id_from_topic` can resolve a topic back to a lesson when part 2 does
+become applicable. An earlier revision put *only* the digest in the topic,
+which no longer matched that function's pattern — applying part 2 then would
+have denied every subscribe and broken the lesson room completely. If you ever
+get those policies installed, verify a real room still connects.
 
 This is still not access control — it is a bearer capability, same as before,
 just no longer derivable from anything that leaks alongside the room URL. A

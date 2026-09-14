@@ -30,58 +30,51 @@ create policy "lessons_select_participants"
   on public.lessons for select
   using (auth.uid() = student_id or auth.uid() = teacher_id);
 
+-- NOTE: these three policies are the baseline shape only. `security_hardening.sql`
+-- replaces all of them (pinning `created_by`, requiring `pending` on both insert
+-- paths, and allowing either participant to update), and `security_hardening_2.sql`
+-- adds the transition trigger on top. They are kept here so this file still
+-- produces a coherent table on a fresh project.
+--
+-- There used to be an `auth.email() = any (array['<a real gmail address>'])`
+-- escape hatch on each of them, so that one hardcoded account bypassed the role
+-- check. Anyone who managed to register that address would have inherited it.
+-- Removed — do not reintroduce a per-email bypass in a policy; admin powers live
+-- in ADMIN_EMAILS server env (see src/server/session.js requireAdmin).
+
 -- Insert: only the student themselves, only as pending.
--- Admin emails bypass the role check so they can test the request flow
--- regardless of their actual profile role. Keep this list in sync with
--- ADMIN_EMAILS in frontend/components/AuthProvider.jsx.
 drop policy if exists "lessons_insert_student" on public.lessons;
 create policy "lessons_insert_student"
   on public.lessons for insert
   with check (
     auth.uid() = student_id
     and status = 'pending'
-    and (
-      exists (
-        select 1 from public.profiles p
-        where p.id = auth.uid() and p.role = 'student'
-      )
-      or auth.email() = any (array['autornas123@gmail.com'])
+    and exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid() and p.role = 'student'
     )
   );
 
--- Insert: only the teacher themselves, only as accepted (they're scheduling
--- it directly, so it doesn't need the pending-approval flow). Admin emails
--- bypass the role check.
+-- Insert: only the teacher themselves, only as pending — the student still has
+-- to accept a lesson a teacher proposed.
 drop policy if exists "lessons_insert_teacher" on public.lessons;
 create policy "lessons_insert_teacher"
   on public.lessons for insert
   with check (
     auth.uid() = teacher_id
-    and status = 'accepted'
-    and (
-      exists (
-        select 1 from public.profiles p
-        where p.id = auth.uid() and p.role = 'teacher'
-      )
-      or auth.email() = any (array['autornas123@gmail.com'])
+    and status = 'pending'
+    and exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid() and p.role = 'teacher'
     )
   );
 
--- Update: only the teacher on the lesson. Admin emails bypass the role check.
+-- Update: either participant on the lesson.
 drop policy if exists "lessons_update_teacher" on public.lessons;
-create policy "lessons_update_teacher"
+create policy "lessons_update_participants"
   on public.lessons for update
-  using (
-    auth.uid() = teacher_id
-    and (
-      exists (
-        select 1 from public.profiles p
-        where p.id = auth.uid() and p.role = 'teacher'
-      )
-      or auth.email() = any (array['autornas123@gmail.com'])
-    )
-  )
+  using (auth.uid() = student_id or auth.uid() = teacher_id)
   with check (
-    auth.uid() = teacher_id
+    (auth.uid() = student_id or auth.uid() = teacher_id)
     and status in ('pending', 'accepted', 'rejected')
   );

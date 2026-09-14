@@ -1,0 +1,29 @@
+# Never upload these in a `railway up` build context.
+#
+# `railway up` tars the current directory, not the git tree, so .gitignore is
+# not necessarily what decides here. Two things in this repo must never leave
+# the machine:
+#
+#   .env*           SUPABASE_SERVICE_ROLE_KEY (bypasses RLS entirely),
+#                   SUPABASE_DB_URL (database password), LESSON_ROOM_SECRET.
+#                   Railway holds all of these as service variables already.
+#   db/backups/     real rows from auth.users, including password hashes.
+#
+# Everything else here is just build weight.
+
+.env
+.env.*
+!.env.example
+
+db/backups/
+
+node_modules/
+.next/
+out/
+build/
+coverage/
+
+.git/
+*.pem
+npm-debug.log*
+.DS_Store

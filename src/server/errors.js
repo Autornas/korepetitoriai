@@ -34,6 +34,9 @@ export const conflict = (message = 'That conflicts with existing data.') =>
 export const payloadTooLarge = (message = 'File is too large.') =>
   new ApiError(413, 'payload_too_large', message);
 
+export const tooManyRequests = (message = 'Too many requests. Please slow down.') =>
+  new ApiError(429, 'too_many_requests', message);
+
 export const notImplemented = (message = 'Not available on this deployment.') =>
   new ApiError(501, 'not_implemented', message);
 

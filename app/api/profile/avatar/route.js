@@ -3,6 +3,7 @@ import { ok } from '@/server/response';
 import { requireUser } from '@/server/session';
 import { badRequest } from '@/server/errors';
 import { uploadAvatar } from '@/server/services/storage';
+import { rateLimit } from '@/server/ratelimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +13,15 @@ export const dynamic = 'force-dynamic';
  */
 export const POST = withRoute(async (request) => {
   const ctx = await requireUser();
+
+  // Each upload costs a 2 MB read plus bucket storage, and the path is fixed
+  // per user, so there is no legitimate reason to do this often.
+  rateLimit({
+    key: `avatar:${ctx.user.id}`,
+    limit: 10,
+    windowMs: 60 * 60 * 1000,
+    message: 'Too many image uploads. Please try again later.',
+  });
 
   let form;
   try {

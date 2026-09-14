@@ -4,6 +4,7 @@ import { createServerSupabase } from '@/lib/supabase/server';
 import { badRequest, serviceUnavailable, ApiError } from '@/server/errors';
 import { parseBody, z } from '@/server/validate';
 import { ensureProfile } from '@/server/services/profiles';
+import { rateLimit, clientIp } from '@/server/ratelimit';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +23,18 @@ const registerSchema = z.object({
  * pick 'teacher' here was the privilege-escalation hole this closes.
  */
 export const POST = withRoute(async (request) => {
+  // Unauthenticated and it both creates rows and triggers Supabase to send
+  // mail, so it is the one route worth limiting by address. Also blunts the
+  // account-enumeration oracle below: the "already registered" answer is kept
+  // because a sign-up form that cannot say why it failed is a bad form, but at
+  // 5 tries per 10 minutes it is no longer usable to sweep a list of emails.
+  rateLimit({
+    key: `register:${clientIp(request)}`,
+    limit: 5,
+    windowMs: 10 * 60 * 1000,
+    message: 'Too many sign-up attempts. Please try again in a few minutes.',
+  });
+
   const supabase = await createServerSupabase();
   if (!supabase) throw serviceUnavailable('Supabase is not configured.');
 

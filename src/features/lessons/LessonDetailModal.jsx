@@ -295,6 +295,19 @@ export default function LessonDetailModal({ lesson, perspective, onClose, onMark
 
         <RateLessonSection lesson={lesson} perspective={perspective} />
 
+        {lesson.status === 'accepted' && (
+          <Link
+            href={`/lessons/${lesson.id}/board`}
+            className="mt-3 flex items-center justify-center gap-2 w-full px-3 py-2 rounded-lg bg-[#FFFDF8] border border-[#DCC9A8] text-[#5A4A38] text-sm hover:bg-[#F4ECDF] transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <rect x="2" y="3" width="12" height="8" rx="1" />
+              <path d="M8 11v3M5 14h6" />
+            </svg>
+            {t('lessonDetail.board')}
+          </Link>
+        )}
+
         {counterpartId && lesson.status !== 'rejected' && (
           <Link
             href={`/messages?with=${counterpartId}`}

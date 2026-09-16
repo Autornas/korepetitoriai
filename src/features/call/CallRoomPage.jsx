@@ -93,7 +93,11 @@ export default function CallRoomPage({ lessonId }) {
           <VideoCall channelName={access.channels.call} userId={user.id} />
         </div>
         <div className="min-h-0 min-w-0">
-          <CollabWhiteboard channelName={access.channels.board} userId={user.id} />
+          <CollabWhiteboard
+            lessonId={lesson.id}
+            channelName={access.channels.board}
+            userId={user.id}
+          />
         </div>
       </div>
     </div>

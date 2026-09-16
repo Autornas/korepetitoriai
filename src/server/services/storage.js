@@ -23,9 +23,10 @@ const SIGNATURES = [
   { type: 'image/png', bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] },
   // WEBP: "RIFF" .... "WEBP" — offset 8 checked separately.
   { type: 'image/webp', bytes: [0x52, 0x49, 0x46, 0x46] },
+  { type: 'image/gif', bytes: [0x47, 0x49, 0x46, 0x38] },
 ];
 
-function detectImageType(bytes) {
+export function detectImageType(bytes) {
   for (const { type, bytes: signature } of SIGNATURES) {
     if (signature.every((byte, i) => bytes[i] === byte)) {
       if (type === 'image/webp') {

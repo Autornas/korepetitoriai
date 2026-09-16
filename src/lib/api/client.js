@@ -21,12 +21,13 @@ export class ApiClientError extends Error {
   }
 }
 
-async function request(path, { method = 'GET', body, signal, isFormData } = {}) {
+async function request(path, { method = 'GET', body, signal, isFormData, keepalive } = {}) {
   let response;
   try {
     response = await fetch(path, {
       method,
       signal,
+      keepalive,
       credentials: 'same-origin',
       headers: isFormData || body === undefined
         ? undefined

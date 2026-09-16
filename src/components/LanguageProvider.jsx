@@ -191,6 +191,10 @@ const translations = {
     // Lesson detail modal — extras
     'lessonDetail.openExternalMeet': 'Open external Meet',
     'lessonDetail.message':          'Message',
+    'lessonDetail.board':            'Open saved whiteboard',
+    'board.kicker':                  'Saved whiteboard',
+    'board.lesson':                  'Lesson',
+    'board.back':                    'Back to lessons',
     'lessonDetail.tutorWord':        'tutor',
     'lessonDetail.studentWord':      'student',
 
@@ -434,6 +438,10 @@ const translations = {
     // Lesson detail modal — extras
     'lessonDetail.openExternalMeet': 'Atidaryti išorinį Meet',
     'lessonDetail.message':          'Rašyti',
+    'lessonDetail.board':            'Atidaryti išsaugotą lentą',
+    'board.kicker':                  'Išsaugota lenta',
+    'board.lesson':                  'Pamoka',
+    'board.back':                    'Atgal į pamokas',
     'lessonDetail.tutorWord':        'korepetitoriui',
     'lessonDetail.studentWord':      'mokiniui',
 

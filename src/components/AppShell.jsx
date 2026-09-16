@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 
-const CALL_RE = /^\/lessons\/[^/]+\/call(\/|$)/;
+const CALL_RE = /^\/lessons\/[^/]+\/(call|board)(\/|$)/;
 
 export default function AppShell({ children }) {
   const pathname = usePathname() ?? '';

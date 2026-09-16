@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { registerUser, loginWithGoogle } from '@/lib/api/auth';
 import { useAuth } from '@/components/AuthProvider';
+import { useLanguage } from '@/components/LanguageProvider';
+import LanguageSwitch from '@/components/LanguageSwitch';
 
 function InputField({ label, id, type = "text", value, onChange, error, placeholder, autoComplete }) {
   const [focused, setFocused] = useState(false);
@@ -37,42 +39,44 @@ function InputField({ label, id, type = "text", value, onChange, error, placehol
   );
 }
 
+// Values are translation keys.
 function validate(fields) {
   const errors = {};
-  if (!fields.name.trim()) errors.name = "Full name is required.";
+  if (!fields.name.trim()) errors.name = 'auth.err.nameRequired';
   if (!fields.email.trim()) {
-    errors.email = "Email is required.";
+    errors.email = 'auth.err.emailRequired';
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) {
-    errors.email = "Enter a valid email address.";
+    errors.email = 'auth.err.emailInvalid';
   }
   if (!fields.password) {
-    errors.password = "Password is required.";
+    errors.password = 'auth.err.passwordRequired';
   } else if (fields.password.length < 8) {
-    errors.password = "Password must be at least 8 characters.";
+    errors.password = 'auth.err.passwordShort';
   }
   if (!fields.confirm) {
-    errors.confirm = "Please confirm your password.";
+    errors.confirm = 'auth.err.confirmRequired';
   } else if (fields.password !== fields.confirm) {
-    errors.confirm = "Passwords do not match.";
+    errors.confirm = 'auth.err.mismatch';
   }
   return errors;
 }
 
+/** Translation key for a known error, otherwise the server's own message. */
 function friendlyError(err) {
   const code = err?.code;
   const msg  = err?.message ?? '';
-  if (code === 'auth/not-configured')
-    return 'Supabase is not configured. Fill in your .env.local file.';
+  if (code === 'auth/not-configured') return { key: 'auth.err.notConfigured' };
   if (code === 'user_already_exists' || msg.includes('already registered'))
-    return 'An account with this email already exists.';
+    return { key: 'auth.err.exists' };
   if (code === 'weak_password' || msg.includes('Password should be'))
-    return 'Password is too weak (minimum 6 characters).';
-  return msg || 'Something went wrong. Please try again.';
+    return { key: 'auth.err.weak' };
+  return msg ? { text: msg } : { key: 'auth.err.generic' };
 }
 
 export default function RegisterPage() {
   const router = useRouter();
   const { user, loading: authLoading, refresh } = useAuth();
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -84,8 +88,8 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
-  const [firebaseError, setFirebaseError] = useState("");
-  const [infoMessage, setInfoMessage] = useState("");
+  const [firebaseError, setFirebaseError] = useState(null);
+  const [infoMessage, setInfoMessage] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const visibleErrors = Object.fromEntries(
@@ -109,8 +113,8 @@ export default function RegisterPage() {
     setTouched({ name: true, email: true, password: true, confirm: true });
     if (!isValid) return;
     setLoading(true);
-    setFirebaseError("");
-    setInfoMessage("");
+    setFirebaseError(null);
+    setInfoMessage(false);
     try {
       const { signedIn } = await registerUser({
         name: fields.name,
@@ -120,7 +124,7 @@ export default function RegisterPage() {
       if (!signedIn) {
         // Email confirmation is switched on for this project.
         setLoading(false);
-        setInfoMessage("Account created! Check your inbox to confirm your email, then sign in.");
+        setInfoMessage(true);
         return;
       }
       // Sign-up ran on the server, so no browser auth event fires — pull the
@@ -134,7 +138,7 @@ export default function RegisterPage() {
 
   const handleGoogle = async () => {
     setLoading(true);
-    setFirebaseError("");
+    setFirebaseError(null);
     try {
       await loginWithGoogle();
       // Redirects to Google — page navigates away, loading stays true
@@ -145,11 +149,12 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFDF8] flex items-center justify-center p-4">
+    <div className="relative min-h-screen bg-[#FFFDF8] flex items-center justify-center p-4">
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
+      <LanguageSwitch className="absolute top-4 right-4" />
 
       <div className="w-full max-w-md" style={{ animation: "slideUp 0.4s ease both" }}>
         {/* Brand */}
@@ -160,21 +165,21 @@ export default function RegisterPage() {
                 d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-[#2A1F14] tracking-tight">Create your account</h1>
-          <p className="text-[#5A4A38] text-sm mt-1">Join the learning community today</p>
+          <h1 className="text-2xl font-bold text-[#2A1F14] tracking-tight">{t('auth.registerTitle')}</h1>
+          <p className="text-[#5A4A38] text-sm mt-1">{t('auth.registerSub')}</p>
         </div>
 
         {/* Card */}
         <div className="bg-[#FFFDF8]/80 backdrop-blur border border-[#EADFCB] rounded-2xl shadow-2xl shadow-black/40 p-8">
           {firebaseError && (
             <div className="mb-4 px-4 py-3 rounded-xl bg-[#F4D9D5] border border-[#E0A89F] text-red-400 text-sm">
-              {firebaseError}
+              {firebaseError.key ? t(firebaseError.key) : firebaseError.text}
             </div>
           )}
 
           {infoMessage && (
             <div className="mb-4 px-4 py-3 rounded-xl bg-[#E6EBD5] border border-[#7A8C5C]/30 text-[#4F5F36] text-sm">
-              {infoMessage}
+              {t('auth.checkInbox')}
             </div>
           )}
 
@@ -192,53 +197,53 @@ export default function RegisterPage() {
               <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
               <path fill="none" d="M0 0h48v48H0z"/>
             </svg>
-            Continue with Google
+            {t('auth.google')}
           </button>
 
           <div className="flex items-center gap-3 mb-5">
             <div className="flex-1 h-px bg-[#F4ECDF]" />
-            <span className="text-xs text-[#8A7556]">or register with email</span>
+            <span className="text-xs text-[#8A7556]">{t('auth.orEmailRegister')}</span>
             <div className="flex-1 h-px bg-[#F4ECDF]" />
           </div>
 
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
             <InputField
-              label="Full Name"
+              label={t('auth.fullName')}
               id="name"
               value={fields.name}
               onChange={handleChange("name")}
-              error={visibleErrors.name}
-              placeholder="Jane Smith"
+              error={visibleErrors.name && t(visibleErrors.name)}
+              placeholder={t('auth.namePh')}
               autoComplete="name"
             />
             <InputField
-              label="Email Address"
+              label={t('auth.email')}
               id="email"
               type="email"
               value={fields.email}
               onChange={handleChange("email")}
-              error={visibleErrors.email}
+              error={visibleErrors.email && t(visibleErrors.email)}
               placeholder="jane@example.com"
               autoComplete="email"
             />
             <InputField
-              label="Password"
+              label={t('auth.password')}
               id="password"
               type="password"
               value={fields.password}
               onChange={handleChange("password")}
-              error={visibleErrors.password}
-              placeholder="Min. 8 characters"
+              error={visibleErrors.password && t(visibleErrors.password)}
+              placeholder={t('auth.newPasswordPh')}
               autoComplete="new-password"
             />
             <InputField
-              label="Confirm Password"
+              label={t('auth.confirm')}
               id="confirm"
               type="password"
               value={fields.confirm}
               onChange={handleChange("confirm")}
-              error={visibleErrors.confirm}
-              placeholder="Repeat your password"
+              error={visibleErrors.confirm && t(visibleErrors.confirm)}
+              placeholder={t('auth.confirmPh')}
               autoComplete="new-password"
             />
 
@@ -254,15 +259,15 @@ export default function RegisterPage() {
                 }
               `}
             >
-              {loading ? 'Creating account…' : 'Create Account'}
+              {loading ? t('auth.creating') : t('auth.create')}
             </button>
           </form>
         </div>
 
         <p className="text-center text-sm text-[#8A7556] mt-6">
-          Already have an account?{" "}
+          {t('auth.haveAccount')}{" "}
           <a href="/login" className="text-[#B0533A] hover:text-[#B0533A] font-medium transition-colors duration-150 underline underline-offset-2">
-            Sign in
+            {t('auth.signInLink')}
           </a>
         </p>
       </div>

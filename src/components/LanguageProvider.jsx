@@ -35,6 +35,51 @@ const translations = {
     // Topbar / language toggle
     'lang.toggleTitle':   'Switch language',
 
+    // Auth pages
+    'auth.loginTitle':        'Welcome back',
+    'auth.loginSub':          'Sign in to your account',
+    'auth.google':            'Continue with Google',
+    'auth.orEmailLogin':      'or sign in with email',
+    'auth.orEmailRegister':   'or register with email',
+    'auth.email':             'Email Address',
+    'auth.password':          'Password',
+    'auth.passwordPh':        'Enter your password',
+    'auth.forgot':            'Forgot password?',
+    'auth.signIn':            'Sign In',
+    'auth.signingIn':         'Signing in…',
+    'auth.noAccount':         "Don't have an account?",
+    'auth.register':          'Register',
+    'auth.registerTitle':     'Create your account',
+    'auth.registerSub':       'Join the learning community today',
+    'auth.fullName':          'Full Name',
+    'auth.namePh':            'Jane Smith',
+    'auth.newPasswordPh':     'Min. 8 characters',
+    'auth.confirm':           'Confirm Password',
+    'auth.confirmPh':         'Repeat your password',
+    'auth.create':            'Create Account',
+    'auth.creating':          'Creating account…',
+    'auth.haveAccount':       'Already have an account?',
+    'auth.signInLink':        'Sign in',
+    'auth.checkInbox':        'Account created! Check your inbox to confirm your email, then sign in.',
+    'auth.welcome':           'Welcome,',
+    'auth.setPasswordSub':    'Set a password to finish creating your account',
+    'auth.setPassword':       'Set Password',
+    'auth.err.nameRequired':  'Full name is required.',
+    'auth.err.emailRequired': 'Email is required.',
+    'auth.err.emailInvalid':  'Enter a valid email address.',
+    'auth.err.passwordRequired': 'Password is required.',
+    'auth.err.passwordShort': 'Password must be at least 8 characters.',
+    'auth.err.confirmRequired': 'Please confirm your password.',
+    'auth.err.mismatch':      'Passwords do not match.',
+    'auth.err.notConfigured': 'Supabase is not configured. Fill in your .env.local file.',
+    'auth.err.invalidLogin':  'Incorrect email or password.',
+    'auth.err.notConfirmed':  'Please confirm your email before signing in.',
+    'auth.err.rateLimit':     'Too many attempts. Please wait a moment.',
+    'auth.err.noUser':        'No account found with this email.',
+    'auth.err.exists':        'An account with this email already exists.',
+    'auth.err.weak':          'Password is too weak.',
+    'auth.err.generic':       'Something went wrong. Please try again.',
+
     // Dashboard
     'dashboard.crumb':           'Dashboard',
     'dashboard.kicker':          'Dashboard',
@@ -282,6 +327,51 @@ const translations = {
     // Topbar / language toggle
     'lang.toggleTitle':   'Keisti kalbą',
 
+    // Prisijungimo puslapiai
+    'auth.loginTitle':        'Sveiki sugrįžę',
+    'auth.loginSub':          'Prisijunkite prie savo paskyros',
+    'auth.google':            'Tęsti su Google',
+    'auth.orEmailLogin':      'arba prisijunkite el. paštu',
+    'auth.orEmailRegister':   'arba registruokitės el. paštu',
+    'auth.email':             'El. pašto adresas',
+    'auth.password':          'Slaptažodis',
+    'auth.passwordPh':        'Įveskite slaptažodį',
+    'auth.forgot':            'Pamiršote slaptažodį?',
+    'auth.signIn':            'Prisijungti',
+    'auth.signingIn':         'Jungiamasi…',
+    'auth.noAccount':         'Neturite paskyros?',
+    'auth.register':          'Registruotis',
+    'auth.registerTitle':     'Susikurkite paskyrą',
+    'auth.registerSub':       'Prisijunkite prie mokymosi bendruomenės',
+    'auth.fullName':          'Vardas ir pavardė',
+    'auth.namePh':            'Jonas Jonaitis',
+    'auth.newPasswordPh':     'Bent 8 simboliai',
+    'auth.confirm':           'Pakartokite slaptažodį',
+    'auth.confirmPh':         'Įveskite slaptažodį dar kartą',
+    'auth.create':            'Sukurti paskyrą',
+    'auth.creating':          'Kuriama paskyra…',
+    'auth.haveAccount':       'Jau turite paskyrą?',
+    'auth.signInLink':        'Prisijungti',
+    'auth.checkInbox':        'Paskyra sukurta! Patvirtinkite el. paštą (patikrinkite pašto dėžutę) ir prisijunkite.',
+    'auth.welcome':           'Sveiki,',
+    'auth.setPasswordSub':    'Nustatykite slaptažodį, kad užbaigtumėte paskyros kūrimą',
+    'auth.setPassword':       'Nustatyti slaptažodį',
+    'auth.err.nameRequired':  'Įveskite vardą ir pavardę.',
+    'auth.err.emailRequired': 'Įveskite el. pašto adresą.',
+    'auth.err.emailInvalid':  'Įveskite teisingą el. pašto adresą.',
+    'auth.err.passwordRequired': 'Įveskite slaptažodį.',
+    'auth.err.passwordShort': 'Slaptažodis turi būti bent 8 simbolių.',
+    'auth.err.confirmRequired': 'Pakartokite slaptažodį.',
+    'auth.err.mismatch':      'Slaptažodžiai nesutampa.',
+    'auth.err.notConfigured': 'Supabase nesukonfigūruotas. Užpildykite .env.local failą.',
+    'auth.err.invalidLogin':  'Neteisingas el. paštas arba slaptažodis.',
+    'auth.err.notConfirmed':  'Prieš prisijungdami patvirtinkite el. pašto adresą.',
+    'auth.err.rateLimit':     'Per daug bandymų. Palaukite šiek tiek.',
+    'auth.err.noUser':        'Paskyros su šiuo el. paštu nėra.',
+    'auth.err.exists':        'Paskyra su šiuo el. paštu jau egzistuoja.',
+    'auth.err.weak':          'Slaptažodis per silpnas.',
+    'auth.err.generic':       'Kažkas nepavyko. Bandykite dar kartą.',
+
     // Dashboard
     'dashboard.crumb':           'Skydelis',
     'dashboard.kicker':          'Skydelis',
@@ -511,6 +601,10 @@ export function LanguageProvider({ children }) {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (SUPPORTED.includes(stored)) setLangState(stored);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const setLang = (next) => {
     if (!SUPPORTED.includes(next)) return;

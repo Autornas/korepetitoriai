@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { setPassword } from '@/lib/api/auth';
 import { useAuth } from '@/components/AuthProvider';
+import { useLanguage } from '@/components/LanguageProvider';
+import LanguageSwitch from '@/components/LanguageSwitch';
 
 function InputField({ label, id, value, onChange, error, placeholder, autoComplete }) {
   const [focused, setFocused] = useState(false);
@@ -32,17 +34,18 @@ function InputField({ label, id, value, onChange, error, placeholder, autoComple
   );
 }
 
+// Values are translation keys.
 function validate(fields) {
   const errors = {};
   if (!fields.password) {
-    errors.password = "Password is required.";
+    errors.password = 'auth.err.passwordRequired';
   } else if (fields.password.length < 8) {
-    errors.password = "Password must be at least 8 characters.";
+    errors.password = 'auth.err.passwordShort';
   }
   if (!fields.confirm) {
-    errors.confirm = "Please confirm your password.";
+    errors.confirm = 'auth.err.confirmRequired';
   } else if (fields.password !== fields.confirm) {
-    errors.confirm = "Passwords do not match.";
+    errors.confirm = 'auth.err.mismatch';
   }
   return errors;
 }
@@ -50,6 +53,7 @@ function validate(fields) {
 export default function SetPasswordPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
 
   // No session (expired/used invite link) — nothing to set a password on.
   useEffect(() => {
@@ -89,7 +93,7 @@ export default function SetPasswordPage() {
       await setPassword({ password: fields.password });
       router.replace('/dashboard');
     } catch (err) {
-      setFormError(err?.message || 'Something went wrong. Please try again.');
+      setFormError(err?.message || t('auth.err.generic'));
       setLoading(false);
     }
   };
@@ -103,10 +107,11 @@ export default function SetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FFFDF8] flex items-center justify-center p-4">
+    <div className="relative min-h-screen bg-[#FFFDF8] flex items-center justify-center p-4">
       <style>{`
         @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
+      <LanguageSwitch className="absolute top-4 right-4" />
 
       <div style={{ animation: "slideUp 0.4s ease both" }} className="w-full max-w-md">
         <div className="text-center mb-8">
@@ -116,8 +121,8 @@ export default function SetPasswordPage() {
                 d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-[#2A1F14] tracking-tight">Welcome, {user.user_metadata?.full_name || user.email}</h1>
-          <p className="text-[#5A4A38] text-sm mt-1">Set a password to finish creating your account</p>
+          <h1 className="text-2xl font-bold text-[#2A1F14] tracking-tight">{t('auth.welcome')} {user.user_metadata?.full_name || user.email}</h1>
+          <p className="text-[#5A4A38] text-sm mt-1">{t('auth.setPasswordSub')}</p>
         </div>
 
         <div className="bg-[#FFFDF8]/80 backdrop-blur border border-[#EADFCB] rounded-2xl shadow-2xl shadow-black/40 p-8">
@@ -129,15 +134,15 @@ export default function SetPasswordPage() {
 
           <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
             <InputField
-              label="Password" id="password"
+              label={t('auth.password')} id="password"
               value={fields.password} onChange={handleChange("password")}
-              error={visibleErrors.password} placeholder="Min. 8 characters"
+              error={visibleErrors.password && t(visibleErrors.password)} placeholder={t('auth.newPasswordPh')}
               autoComplete="new-password"
             />
             <InputField
-              label="Confirm Password" id="confirm"
+              label={t('auth.confirm')} id="confirm"
               value={fields.confirm} onChange={handleChange("confirm")}
-              error={visibleErrors.confirm} placeholder="Repeat your password"
+              error={visibleErrors.confirm && t(visibleErrors.confirm)} placeholder={t('auth.confirmPh')}
               autoComplete="new-password"
             />
 
@@ -150,7 +155,7 @@ export default function SetPasswordPage() {
                   : 'bg-[#C8654A] hover:bg-[#B0533A] active:scale-[0.98] shadow-lg shadow-[#B0533A]/25 cursor-pointer'
                 }`}
             >
-              {loading ? 'Saving…' : 'Set Password'}
+              {loading ? t('common.saving') : t('auth.setPassword')}
             </button>
           </form>
         </div>

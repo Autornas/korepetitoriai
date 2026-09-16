@@ -14,10 +14,10 @@ The UI is fully bilingual (English / Lithuanian) and the role layer (`teacher` �
 - Role-aware profile pages — teachers fill out subjects, hourly rate, bio, weekly availability; students fill out grade, struggles, expectations
 - Photo upload to Supabase Storage
 
-### Assignment & scheduling
-- An admin pairs a student with a teacher (`/admin/overview`); that pairing is what lets the teacher put a lesson on the student's calendar
+### Scheduling
+- Every teacher can schedule a lesson with any student (admin accounts are not listed)
 - The teacher schedules each lesson — date, time, subject, optional notes — and sets **what that lesson is worth**
-- A scheduled lesson is confirmed immediately: there is no student acceptance step, because the admin-made pairing is the consent
+- A scheduled lesson is confirmed immediately: there is no student acceptance step
 - Either party can cancel; a cancelled lesson is excluded from earnings, which is also how a reschedule is expressed
 
 ### Earnings & ratings
@@ -194,14 +194,14 @@ app/
     messages/             1-to-1 chat
     profile/              role-aware profile editor
   api/                    route handlers — the only path to the database
-    admin/                assignments, billing, stats, teachers — all requireAdmin
+    admin/                billing, stats, teachers — all requireAdmin
     auth/                 register, session
     billing/              the platform payment account (read-only here)
     lessons/              list, create, [id] actions, access, counterpart, meet, rating
     messages/             conversations, [partnerId] thread
     profile/              me, [id], avatar
     stats/                the signed-in teacher's own earnings and rating
-    students/             the students assigned to the calling teacher
+    students/             every student, for the calling teacher's schedule form
   auth/callback/          OAuth PKCE code exchange (writes session cookies)
   login/, register/       public routes
 
@@ -263,12 +263,10 @@ their own:
   `lesson_counterpart_profile()`; both are `SECURITY DEFINER` and authorise
   themselves in SQL. The student's learning notes travel one way — up to the
   teacher, never back down.
-- **A teacher can only reach students an admin assigned them.** A lesson is now
-  created already `accepted`, which the earlier design refused for good reason:
-  a teacher minting an accepted lesson against an arbitrary student id was
-  unsolicited DM access to anyone on the platform. What makes it safe is
-  `teacher_students` — the insert policy requires a matching row, and no user
-  JWT can write that table.
+- **Only a teacher creates lessons, and only with a student.** A lesson is
+  created already `accepted`; the insert policy requires the caller to be a
+  teacher and the other party to be a student. Teacher accounts exist only by
+  admin invite, which is what makes that trust acceptable.
 - **Money is write-once.** `lessons.price` is outside the UPDATE grant and
   re-checked by `lessons_guard_update`, so a price cannot be rewritten after
   the fact; earnings are a sum over it. The payment account lives in

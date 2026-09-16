@@ -1,4 +1,5 @@
 import { getAdminSupabase } from '@/lib/supabase/admin';
+import { serverEnv } from '@/lib/env';
 import { badRequest, fromSupabaseError, notFound } from '../errors';
 
 /**
@@ -81,36 +82,31 @@ export async function getPublicProfile({ supabase }, id) {
   return data;
 }
 
-/**
- * Students a teacher may schedule with: the ones an admin assigned them.
- *
- * This used to return every student on the platform, which was already
- * narrower than the directory of names, emails and grades it replaced. It is
- * now narrower again, and for a different reason: since a teacher-created
- * lesson lands `accepted` with no student confirmation, the assignment list is
- * the consent boundary, not just a convenience. The insert policy enforces the
- * same list in SQL -- this query exists so the dropdown cannot offer a student
- * the teacher would be refused anyway.
- */
-export async function listSchedulableStudents({ supabase, user }) {
-  const { data: links, error: linkError } = await supabase
-    .from('teacher_students')
-    .select('student_id')
-    .eq('teacher_id', user.id);
-
-  if (linkError) throw fromSupabaseError(linkError, 'Could not load your students.');
-
-  const ids = (links ?? []).map((l) => l.student_id);
-  if (ids.length === 0) return [];
-
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('id, name, photo_url, headline')
-    .in('id', ids)
-    .order('name', { ascending: true });
+/** Every student a teacher may schedule with. Admin accounts are left out. */
+export async function listSchedulableStudents({ supabase }) {
+  const [{ data, error }, adminIds] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('id, name, photo_url, headline')
+      .eq('role', 'student')
+      .order('name', { ascending: true }),
+    getAdminProfileIds(),
+  ]);
 
   if (error) throw fromSupabaseError(error, 'Could not load students.');
-  return data ?? [];
+  return (data ?? []).filter((s) => !adminIds.has(s.id));
+}
+
+// `profiles.email` is hidden from user JWTs, so matching ADMIN_EMAILS needs the service role.
+async function getAdminProfileIds() {
+  const emails = serverEnv.adminEmails;
+  const admin = getAdminSupabase();
+  if (emails.length === 0 || !admin) return new Set();
+
+  const { data } = await admin.from('profiles').select('id, email').not('email', 'is', null);
+  return new Set(
+    (data ?? []).filter((p) => emails.includes(p.email.toLowerCase())).map((p) => p.id),
+  );
 }
 
 /**

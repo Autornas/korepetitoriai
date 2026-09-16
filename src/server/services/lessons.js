@@ -83,18 +83,10 @@ export async function getLesson({ supabase, user }, lessonId) {
 }
 
 /**
- * Teacher schedules a lesson with a student an admin assigned them.
+ * Teacher schedules a lesson with any student.
  *
- * The only way a lesson gets created. Students no longer send requests, so
- * `createLessonRequest` and the acceptance handshake it required are gone.
- *
- * It lands `accepted`, which the previous design refused for a good reason:
- * a teacher minting an accepted lesson against an arbitrary student id was
- * unsolicited DM access to anyone on the platform. What makes it safe is the
- * assignment check below and, underneath it, the `teacher_students` clause in
- * the insert policy — the teacher can only reach students an admin already
- * paired them with, and no user JWT can write that table. The check here is
- * for the error message; the policy is the control.
+ * The only way a lesson gets created. It lands `accepted`: teacher accounts
+ * exist only by admin invite, so a teacher is trusted to book any student.
  *
  * `price` is what this lesson is worth to the teacher. It is written once and
  * is immutable afterwards (column GRANT plus `lessons_guard_update`), because
@@ -104,17 +96,6 @@ export async function getLesson({ supabase, user }, lessonId) {
 export async function scheduleLessonAsTeacher({ supabase, user }, input) {
   const student = await requireProfileRole(supabase, input.studentId, 'student');
   if (student.id === user.id) throw badRequest('You cannot book yourself.');
-
-  const { data: link } = await supabase
-    .from('teacher_students')
-    .select('student_id')
-    .eq('teacher_id', user.id)
-    .eq('student_id', student.id)
-    .maybeSingle();
-
-  if (!link) {
-    throw forbidden('That student has not been assigned to you. Ask an administrator.');
-  }
 
   // A lesson is created `accepted` and priced, and a past-dated one counts as
   // taught the moment it exists -- so an unbounded date is a way to fabricate

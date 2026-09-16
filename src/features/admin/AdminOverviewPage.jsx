@@ -1,11 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Topbar from '@/components/Topbar';
 import { useLanguage } from '@/components/LanguageProvider';
 import { listTeacherStats } from '@/lib/api/stats';
 import { getBilling, saveBilling } from '@/lib/api/billing';
-import { assignStudent, listAssignments, unassignStudent } from '@/lib/api/admin';
 import EarningsPanel, { money } from '@/features/dashboard/EarningsPanel';
 import Stars from '@/features/dashboard/Stars';
 
@@ -58,13 +57,10 @@ function AvailabilityGrid({ slots }) {
   );
 }
 
-function TeacherCard({ teacher, students, assignedIds, onAssign, onUnassign, busy }) {
+function TeacherCard({ teacher }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
-  const [pick, setPick] = useState('');
 
-  const assigned = students.filter((s) => assignedIds.has(s.id));
-  const unassigned = students.filter((s) => !assignedIds.has(s.id));
   const initials = (teacher.name ?? '?')
     .split(' ')
     .map((w) => w[0])
@@ -139,81 +135,18 @@ function TeacherCard({ teacher, students, assignedIds, onAssign, onUnassign, bus
         <div className="mt-5 space-y-5">
           <EarningsPanel stats={teacher} compact />
 
-          <div className="grid gap-5 lg:grid-cols-2">
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-[#8A7556] mb-2">
-                {t('admin.assignedStudents')}
-              </p>
-              {assigned.length === 0 ? (
-                <p className="text-xs text-[#8A7556] mb-2">{t('admin.noneAssigned')}</p>
-              ) : (
-                <ul className="space-y-1.5 mb-3">
-                  {assigned.map((s) => (
-                    <li
-                      key={s.id}
-                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#F4ECDF] border border-[#EADFCB]"
-                    >
-                      <span className="flex-1 min-w-0 text-xs text-[#2A1F14] truncate">
-                        {s.name ?? s.email}
-                        {s.grade && <span className="text-[#8A7556]"> · {s.grade}</span>}
-                      </span>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => onUnassign(teacher.id, s.id)}
-                        className="shrink-0 text-[10px] text-[#8A7556] hover:text-[#7A3A33] disabled:opacity-50"
-                      >
-                        {t('admin.unassign')}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <div className="flex gap-2">
-                <select
-                  value={pick}
-                  onChange={(e) => setPick(e.target.value)}
-                  className={`${input} flex-1`}
-                >
-                  <option value="">{t('admin.pickStudent')}</option>
-                  {unassigned.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name ?? s.email}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  disabled={!pick || busy}
-                  onClick={async () => {
-                    await onAssign(teacher.id, pick);
-                    setPick('');
-                  }}
-                  className="shrink-0 px-3 py-2 rounded-lg bg-[#C8654A] text-white text-xs font-medium hover:bg-[#B0533A] transition-colors disabled:opacity-50"
-                >
-                  {t('admin.assign')}
-                </button>
+          <div>
+            <p className="text-[10px] font-mono uppercase tracking-widest text-[#8A7556] mb-2">
+              {t('admin.availability')}
+            </p>
+            {teacher.availability.length === 0 ? (
+              <p className="text-xs text-[#8A7556]">{t('admin.noAvailability')}</p>
+            ) : (
+              <div className="max-w-md">
+                <AvailabilityGrid slots={teacher.availability} />
+                <p className="text-[10px] font-mono text-[#8A7556] mt-2">Europe/Vilnius</p>
               </div>
-              <p className="text-[10px] text-[#8A7556] mt-1.5">{t('admin.assignHint')}</p>
-              {assigned.length > 0 && (
-                <p className="text-[10px] text-[#8A6418] mt-1">{t('admin.unassignHint')}</p>
-              )}
-            </div>
-
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-[#8A7556] mb-2">
-                {t('admin.availability')}
-              </p>
-              {teacher.availability.length === 0 ? (
-                <p className="text-xs text-[#8A7556]">{t('admin.noAvailability')}</p>
-              ) : (
-                <>
-                  <AvailabilityGrid slots={teacher.availability} />
-                  <p className="text-[10px] font-mono text-[#8A7556] mt-2">Europe/Vilnius</p>
-                </>
-              )}
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -346,49 +279,19 @@ function BillingCard() {
 export default function AdminOverviewPage() {
   const { t } = useLanguage();
   const [teachers, setTeachers] = useState([]);
-  const [directory, setDirectory] = useState({ assignments: [], students: [] });
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const refresh = useCallback(async () => {
-    setError('');
-    try {
-      const [stats, assignments] = await Promise.all([listTeacherStats(), listAssignments()]);
-      setTeachers(stats);
-      setDirectory(assignments);
-    } catch (e) {
-      setError(e.message ?? t('admin.loadFailed'));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
   useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  const assignedByTeacher = useMemo(() => {
-    const map = new Map();
-    for (const a of directory.assignments ?? []) {
-      if (!map.has(a.teacher_id)) map.set(a.teacher_id, new Set());
-      map.get(a.teacher_id).add(a.student_id);
-    }
-    return map;
-  }, [directory.assignments]);
-
-  const mutate = async (fn) => {
-    setBusy(true);
-    setError('');
-    try {
-      await fn();
-      await refresh();
-    } catch (e) {
-      setError(e.message ?? t('admin.saveFailed'));
-    } finally {
-      setBusy(false);
-    }
-  };
+    const controller = new AbortController();
+    listTeacherStats({ signal: controller.signal })
+      .then(setTeachers)
+      .catch((e) => {
+        if (e?.name !== 'AbortError') setError(e.message ?? t('admin.loadFailed'));
+      })
+      .finally(() => setLoading(false));
+    return () => controller.abort();
+  }, [t]);
 
   const totals = useMemo(
     () =>
@@ -468,19 +371,7 @@ export default function AdminOverviewPage() {
               ) : (
                 <div className="space-y-3">
                   {teachers.map((teacher) => (
-                    <TeacherCard
-                      key={teacher.id}
-                      teacher={teacher}
-                      students={directory.students ?? []}
-                      assignedIds={assignedByTeacher.get(teacher.id) ?? new Set()}
-                      busy={busy}
-                      onAssign={(teacherId, studentId) =>
-                        mutate(() => assignStudent({ teacherId, studentId }))
-                      }
-                      onUnassign={(teacherId, studentId) =>
-                        mutate(() => unassignStudent({ teacherId, studentId }))
-                      }
-                    />
+                    <TeacherCard key={teacher.id} teacher={teacher} />
                   ))}
                 </div>
               )}

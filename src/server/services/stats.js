@@ -141,7 +141,7 @@ export async function listTeacherStats() {
   }
   const admin = getAdminSupabase();
 
-  const [teachersResult, lessonsResult, ratingsResult, linksResult] = await Promise.all([
+  const [teachersResult, lessonsResult, ratingsResult] = await Promise.all([
     admin
       .from('profiles')
       .select('id, name, email, photo_url, headline, subjects, availability, price_60')
@@ -149,19 +149,14 @@ export async function listTeacherStats() {
       .order('name', { ascending: true }),
     admin.from('lessons').select(STAT_LESSON_FIELDS),
     admin.from('lesson_ratings').select('teacher_id, stars'),
-    admin.from('teacher_students').select('teacher_id, student_id'),
   ]);
 
-  for (const result of [teachersResult, lessonsResult, ratingsResult, linksResult]) {
+  for (const result of [teachersResult, lessonsResult, ratingsResult]) {
     if (result.error) throw fromSupabaseError(result.error, 'Could not load the overview.');
   }
 
   const lessonsByTeacher = groupBy(lessonsResult.data ?? [], (l) => l.teacher_id);
   const ratingsByTeacher = groupBy(ratingsResult.data ?? [], (r) => r.teacher_id);
-  const studentCount = new Map();
-  for (const link of linksResult.data ?? []) {
-    studentCount.set(link.teacher_id, (studentCount.get(link.teacher_id) ?? 0) + 1);
-  }
 
   const now = Date.now();
   return (teachersResult.data ?? []).map((teacher) => ({
@@ -175,7 +170,6 @@ export async function listTeacherStats() {
     // the admin overview surfaces it so a slot can be agreed without asking.
     availability: teacher.availability ?? [],
     price_60: teacher.price_60,
-    assignedStudents: studentCount.get(teacher.id) ?? 0,
     ...summariseTeacher(
       lessonsByTeacher.get(teacher.id) ?? [],
       ratingsByTeacher.get(teacher.id) ?? [],

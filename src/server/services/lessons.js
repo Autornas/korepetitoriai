@@ -2,13 +2,14 @@ import { createHmac } from 'node:crypto';
 import { badRequest, forbidden, fromSupabaseError, notFound, serviceUnavailable } from '../errors';
 import { serverEnv } from '@/lib/env';
 import { PUBLIC_PROFILE_FIELDS } from './profiles';
+import { LESSON_DURATION_MS, isSchedulable, lessonStartMs } from './schedule';
 
 const LESSON_FIELDS =
-  'id, student_id, teacher_id, created_by, date, time, subject, notes, status, meet_link, payment_code, paid_at, created_at, updated_at';
+  'id, student_id, teacher_id, created_by, date, time, subject, notes, status, meet_link, payment_code, paid_at, price, created_at, updated_at';
 
 /** Join window, enforced server-side rather than trusted from the UI. */
 export const JOIN_OPENS_BEFORE_MS = 15 * 60 * 1000;
-export const JOIN_CLOSES_AFTER_MS = 60 * 60 * 1000;
+export const JOIN_CLOSES_AFTER_MS = LESSON_DURATION_MS;
 
 export async function listMyLessons({ supabase, user, profile }) {
   const column = profile?.role === 'teacher' ? 'teacher_id' : 'student_id';
@@ -82,42 +83,48 @@ export async function getLesson({ supabase, user }, lessonId) {
 }
 
 /**
- * Student books a slot with a teacher. Always lands as `pending` — status is
- * set here, never taken from the request body.
- */
-export async function createLessonRequest({ supabase, user }, input) {
-  const teacher = await requireProfileRole(supabase, input.teacherId, 'teacher');
-  if (teacher.id === user.id) throw badRequest('You cannot book yourself.');
-
-  const { data, error } = await supabase
-    .from('lessons')
-    .insert({
-      student_id: user.id,
-      teacher_id: teacher.id,
-      created_by: user.id,
-      date: input.date,
-      time: input.time,
-      subject: input.subject ?? null,
-      notes: input.notes ?? null,
-      status: 'pending',
-    })
-    .select(LESSON_FIELDS)
-    .single();
-
-  if (error) throw fromSupabaseError(error, 'Could not create the request.');
-  return data;
-}
-
-/**
- * Teacher schedules a lesson directly.
+ * Teacher schedules a lesson with a student an admin assigned them.
  *
- * Still `pending`, not `accepted`. Letting a teacher mint an accepted lesson
- * against an arbitrary student id was what granted unsolicited DM rights to
- * anyone willing to flip their own role. The student has to accept now.
+ * The only way a lesson gets created. Students no longer send requests, so
+ * `createLessonRequest` and the acceptance handshake it required are gone.
+ *
+ * It lands `accepted`, which the previous design refused for a good reason:
+ * a teacher minting an accepted lesson against an arbitrary student id was
+ * unsolicited DM access to anyone on the platform. What makes it safe is the
+ * assignment check below and, underneath it, the `teacher_students` clause in
+ * the insert policy — the teacher can only reach students an admin already
+ * paired them with, and no user JWT can write that table. The check here is
+ * for the error message; the policy is the control.
+ *
+ * `price` is what this lesson is worth to the teacher. It is written once and
+ * is immutable afterwards (column GRANT plus `lessons_guard_update`), because
+ * earnings are summed from it and a mutable price would rewrite both the
+ * teacher's history and what the student was told to pay.
  */
 export async function scheduleLessonAsTeacher({ supabase, user }, input) {
   const student = await requireProfileRole(supabase, input.studentId, 'student');
   if (student.id === user.id) throw badRequest('You cannot book yourself.');
+
+  const { data: link } = await supabase
+    .from('teacher_students')
+    .select('student_id')
+    .eq('teacher_id', user.id)
+    .eq('student_id', student.id)
+    .maybeSingle();
+
+  if (!link) {
+    throw forbidden('That student has not been assigned to you. Ask an administrator.');
+  }
+
+  // A lesson is created `accepted` and priced, and a past-dated one counts as
+  // taught the moment it exists -- so an unbounded date is a way to fabricate
+  // earnings, not just a tidiness problem. The insert policy enforces the same
+  // window; this is here so the teacher gets a sentence back.
+  if (!isSchedulable(input.date, input.time)) {
+    throw badRequest(
+      'Pick a date within the last 30 days or the next two years.',
+    );
+  }
 
   const { data, error } = await supabase
     .from('lessons')
@@ -129,7 +136,8 @@ export async function scheduleLessonAsTeacher({ supabase, user }, input) {
       time: input.time,
       subject: input.subject ?? null,
       notes: input.notes ?? null,
-      status: 'pending',
+      price: input.price ?? null,
+      status: 'accepted',
     })
     .select(LESSON_FIELDS)
     .single();
@@ -139,10 +147,15 @@ export async function scheduleLessonAsTeacher({ supabase, user }, input) {
 }
 
 /**
- * Status transitions. Who may move a lesson where is decided here:
- *   - teacher: accept / reject a request they received
- *   - student: accept / reject a lesson their teacher proposed
- *   - either:  cancel (-> rejected) a lesson they are on
+ * Status transitions.
+ *
+ * New lessons are created `accepted`, so in practice the only move left is
+ * either party cancelling (-> rejected). A cancelled lesson is excluded from
+ * earnings and cannot be rated, which is also how a reschedule is expressed:
+ * cancel the old row and create a new one.
+ *
+ * The accept/reject handling below is kept for `pending` rows written before
+ * students stopped booking their own lessons, so those can still be resolved.
  */
 export async function updateLessonStatus(ctx, lessonId, nextStatus) {
   const { supabase, user } = ctx;
@@ -261,7 +274,11 @@ function deriveRoomChannel(lessonId, kind) {
  */
 export async function getRoomAccess(ctx, lessonId) {
   const lesson = await getLesson(ctx, lessonId);
-  const startMs = Date.parse(`${lesson.date}T${normaliseTime(lesson.time)}`);
+  // Wall-clock columns resolved in the lesson timezone, not the server's --
+  // see ./schedule.js. On a UTC container the old local-time parse put the
+  // start two or three hours late, so the join window opened after the lesson
+  // had already finished.
+  const startMs = lessonStartMs(lesson.date, lesson.time);
   const diff = startMs - Date.now();
 
   let reason = null;
@@ -290,10 +307,6 @@ export async function getRoomAccess(ctx, lessonId) {
       teacher_id: lesson.teacher_id,
     },
   };
-}
-
-function normaliseTime(time) {
-  return String(time).length === 5 ? `${time}:00` : String(time);
 }
 
 async function requireProfileRole(supabase, id, role) {

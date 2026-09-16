@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/components/LanguageProvider';
 import { getLessonCounterpart } from '@/lib/api/lessons';
+import { getBilling } from '@/lib/api/billing';
+import RateLessonSection from './RateLessonSection';
 
 const JOIN_BEFORE_MS = 15 * 60 * 1000; // 15 min
 const JOIN_AFTER_MS  = 60 * 60 * 1000; // 60 min
@@ -127,12 +129,24 @@ function Field({ label, children }) {
   );
 }
 
-function PaymentSection({ lesson, perspective, teacher, onMarkPaid }) {
+function PaymentSection({ lesson, perspective, onMarkPaid }) {
   const { t } = useLanguage();
   const [marking, setMarking] = useState(false);
+  const [billing, setBilling] = useState(null);
+
+  // The payee is the platform account, not the teacher. Fetched here rather
+  // than carried on the lesson row so a change by an admin takes effect
+  // everywhere at once instead of only on lessons created afterwards.
+  useEffect(() => {
+    const controller = new AbortController();
+    getBilling({ signal: controller.signal }).then(setBilling).catch(() => {});
+    return () => controller.abort();
+  }, []);
+
   if (lesson.status !== 'accepted') return null;
 
   const isPaid = Boolean(lesson.paid_at);
+  const amount = lesson.price != null ? `€${Number(lesson.price).toFixed(2)}` : null;
 
   return (
     <div className="mt-4 p-3 rounded-lg border border-[#EADFCB] bg-[#F4ECDF]">
@@ -148,22 +162,36 @@ function PaymentSection({ lesson, perspective, teacher, onMarkPaid }) {
         </span>
       </div>
 
+      {amount && (
+        <p className="text-[11px] text-[#8A7556] mb-1.5">
+          {t('lessonDetail.amount')}: <span className="font-mono text-[#2A1F14] text-sm">{amount}</span>
+        </p>
+      )}
+
       {perspective === 'student' && !isPaid && (
         <div className="space-y-1.5">
           <p className="text-xs text-[#5A4A38]">{t('lessonDetail.payInstructions')}</p>
-          {teacher?.bank_iban ? (
-            <p className="text-sm font-mono text-[#2A1F14] break-all">{teacher.bank_iban}</p>
+          {billing?.iban ? (
+            <>
+              <p className="text-sm font-mono text-[#2A1F14] break-all">{billing.iban}</p>
+              {billing.holder && (
+                <p className="text-[11px] text-[#8A7556]">
+                  {t('lessonDetail.payee')}: <span className="text-[#2A1F14]">{billing.holder}</span>
+                </p>
+              )}
+              {billing.bank_name && (
+                <p className="text-[11px] text-[#8A7556]">{billing.bank_name}</p>
+              )}
+              {billing.note && (
+                <p className="text-[11px] text-[#5A4A38] italic">{billing.note}</p>
+              )}
+            </>
           ) : (
-            <p className="text-xs text-[#8A6418] italic">{t('lessonDetail.noIban')}</p>
+            <p className="text-xs text-[#8A6418] italic">{t('lessonDetail.noBilling')}</p>
           )}
           <p className="text-[11px] text-[#8A7556]">
             {t('lessonDetail.paymentRef')}: <span className="font-mono text-[#2A1F14]">{lesson.payment_code}</span>
           </p>
-          {teacher?.price_60 != null && (
-            <p className="text-[11px] text-[#8A7556]">
-              {t('lessonDetail.amount')}: <span className="font-mono text-[#2A1F14]">€{teacher.price_60}</span>
-            </p>
-          )}
         </div>
       )}
 
@@ -213,7 +241,7 @@ export default function LessonDetailModal({ lesson, perspective, onClose, onMark
   const initials = (p?.name ?? '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   const isStudentView = perspective === 'student';
-  const hasTutorInfo = isStudentView && (p?.bio || p?.subjects?.length || p?.tags?.length || p?.price_60 != null);
+  const hasTutorInfo = isStudentView && (p?.bio || p?.subjects?.length || p?.tags?.length);
   const hasStudentInfo = !isStudentView && (p?.grade || p?.learning_struggles || p?.expectations);
   const noInfo = isStudentView ? !hasTutorInfo : !hasStudentInfo;
   const counterpartId = isStudentView ? lesson.teacher_id : lesson.student_id;
@@ -262,9 +290,10 @@ export default function LessonDetailModal({ lesson, perspective, onClose, onMark
         <PaymentSection
           lesson={lesson}
           perspective={perspective}
-          teacher={isStudentView ? p : null}
           onMarkPaid={onMarkPaid}
         />
+
+        <RateLessonSection lesson={lesson} perspective={perspective} />
 
         {counterpartId && lesson.status !== 'rejected' && (
           <Link
@@ -340,12 +369,6 @@ export default function LessonDetailModal({ lesson, perspective, onClose, onMark
                   </span>
                 ))}
               </div>
-            </Field>
-          )}
-
-          {isStudentView && p?.price_60 != null && (
-            <Field label={t('lessonDetail.price')}>
-              <p className="text-sm text-[#2A1F14]">€{p.price_60} <span className="text-xs text-[#8A7556]">/ 60 min</span></p>
             </Field>
           )}
 

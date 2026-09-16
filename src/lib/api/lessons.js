@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost } from './client';
+import { apiGet, apiPatch, apiPost, apiPut } from './client';
 
 /**
  * One list endpoint for both roles — the server picks the right column from
@@ -13,14 +13,12 @@ export function getLesson(lessonId, options) {
   return apiGet(`/api/lessons/${lessonId}`, options);
 }
 
-/** Student -> tutor. Created as pending. */
-export function requestLesson({ teacherId, date, time, subject, notes }) {
-  return apiPost('/api/lessons', { teacherId, date, time, subject, notes });
-}
-
-/** Tutor -> student. Also pending: the student has to accept. */
-export function scheduleLesson({ studentId, date, time, subject, notes }) {
-  return apiPost('/api/lessons', { studentId, date, time, subject, notes });
+/**
+ * Tutor -> an assigned student. Created `accepted`: the admin-made pairing is
+ * the consent, so there is no acceptance step left for the student.
+ */
+export function scheduleLesson({ studentId, date, time, subject, notes, price }) {
+  return apiPost('/api/lessons', { studentId, date, time, subject, notes, price });
 }
 
 export const acceptLesson = (id) => apiPatch(`/api/lessons/${id}`, { action: 'accept' });
@@ -31,6 +29,16 @@ export const markLessonPaid = (id) => apiPatch(`/api/lessons/${id}`, { action: '
 /** Contact details for the other party — fetched per lesson, on demand. */
 export function getLessonCounterpart(lessonId, options) {
   return apiGet(`/api/lessons/${lessonId}/counterpart`, options);
+}
+
+/** The rating on a lesson, and whether the caller may leave one. */
+export function getLessonRating(lessonId, options) {
+  return apiGet(`/api/lessons/${lessonId}/rating`, options);
+}
+
+/** Student rates a finished lesson. Re-sending replaces their own rating. */
+export function rateLesson(lessonId, { stars, comment }) {
+  return apiPut(`/api/lessons/${lessonId}/rating`, { stars, comment });
 }
 
 /** Server decides whether the room may be opened right now. */

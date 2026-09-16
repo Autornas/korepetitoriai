@@ -28,7 +28,7 @@ export const PUBLIC_PROFILE_FIELDS = [
  */
 const EDITABLE_PROFILE_FIELDS = new Set([
   'name', 'phone', 'photo_url', 'headline', 'price_60', 'price_intro',
-  'subjects', 'tags', 'bio', 'availability', 'bank_iban',
+  'subjects', 'tags', 'bio', 'availability',
   'grade', 'learning_struggles', 'expectations',
 ]);
 
@@ -69,17 +69,6 @@ export async function updateOwnProfile(ctx, patch) {
   return getOwnProfile(ctx);
 }
 
-export async function listTeachers({ supabase }) {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select(PUBLIC_PROFILE_FIELDS)
-    .eq('role', 'teacher')
-    .order('name', { ascending: true });
-
-  if (error) throw fromSupabaseError(error, 'Could not load tutors.');
-  return data ?? [];
-}
-
 export async function getPublicProfile({ supabase }, id) {
   const { data, error } = await supabase
     .from('profiles')
@@ -93,17 +82,31 @@ export async function getPublicProfile({ supabase }, id) {
 }
 
 /**
- * Students a teacher may schedule with.
+ * Students a teacher may schedule with: the ones an admin assigned them.
  *
- * Deliberately narrower than the old `listStudents`, which handed every
- * teacher a directory of names, emails and school grades. Contact details are
- * not part of discovery; they are released per lesson, below.
+ * This used to return every student on the platform, which was already
+ * narrower than the directory of names, emails and grades it replaced. It is
+ * now narrower again, and for a different reason: since a teacher-created
+ * lesson lands `accepted` with no student confirmation, the assignment list is
+ * the consent boundary, not just a convenience. The insert policy enforces the
+ * same list in SQL -- this query exists so the dropdown cannot offer a student
+ * the teacher would be refused anyway.
  */
-export async function listSchedulableStudents({ supabase }) {
+export async function listSchedulableStudents({ supabase, user }) {
+  const { data: links, error: linkError } = await supabase
+    .from('teacher_students')
+    .select('student_id')
+    .eq('teacher_id', user.id);
+
+  if (linkError) throw fromSupabaseError(linkError, 'Could not load your students.');
+
+  const ids = (links ?? []).map((l) => l.student_id);
+  if (ids.length === 0) return [];
+
   const { data, error } = await supabase
     .from('profiles')
     .select('id, name, photo_url, headline')
-    .eq('role', 'student')
+    .in('id', ids)
     .order('name', { ascending: true });
 
   if (error) throw fromSupabaseError(error, 'Could not load students.');
@@ -114,9 +117,12 @@ export async function listSchedulableStudents({ supabase }) {
  * Contact details for the other party on a lesson.
  *
  * All of the authorisation lives in `lesson_counterpart_profile`: it verifies
- * the caller is on the lesson, and releases the IBAN only downward (a student
- * sees the teacher they owe, on an accepted lesson) and the student's
- * learning notes only upward.
+ * the caller is on the lesson and releases the student's learning notes only
+ * upward, to the teacher.
+ *
+ * It no longer returns `bank_iban`. Students now pay one platform account
+ * (see ./billing.js), so the teacher's personal bank details had stopped being
+ * something the student needed and were pure PII exposure.
  */
 export async function getCounterpartDetails({ supabase }, lesson) {
   const { data, error } = await supabase.rpc('lesson_counterpart_profile', {

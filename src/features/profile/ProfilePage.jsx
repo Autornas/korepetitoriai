@@ -107,7 +107,6 @@ export default function ProfilePage() {
   const [headline, setHeadline] = useState('');
   const [price60, setPrice60] = useState('');
   const [priceIntro, setPriceIntro] = useState(false);
-  const [bankIban, setBankIban] = useState('');
   const [subjects, setSubjects] = useState([]);
   const [tags, setTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
@@ -132,7 +131,6 @@ export default function ProfilePage() {
       if (profile.headline) setHeadline(profile.headline);
       if (profile.price_60) setPrice60(String(profile.price_60));
       if (profile.price_intro !== undefined) setPriceIntro(profile.price_intro);
-      if (profile.bank_iban) setBankIban(profile.bank_iban);
       if (profile.subjects) setSubjects(profile.subjects);
       if (profile.tags) setTags(profile.tags);
       if (profile.bio) setBio(profile.bio);
@@ -190,7 +188,6 @@ export default function ProfilePage() {
         headline,
         price_60: price60 ? Number(price60) : null,
         price_intro: priceIntro,
-        bank_iban: bankIban.trim() || null,
         subjects,
         tags,
         bio,
@@ -436,16 +433,9 @@ export default function ProfilePage() {
                   </button>
                 </div>
               </div>
-              <div className="mt-4">
-                <label className="block text-xs text-[#8A7556] mb-1.5">{t('profile.iban')}</label>
-                <input
-                  value={bankIban}
-                  onChange={e => setBankIban(e.target.value.toUpperCase().slice(0, 34))}
-                  placeholder="LT00 0000 0000 0000 0000"
-                  className="w-full px-3 py-2 rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] text-[#2A1F14] text-sm outline-none focus:border-[#C8654A] transition-colors font-mono"
-                />
-                <p className="text-[11px] text-[#8A7556] mt-1.5">{t('profile.ibanHint')}</p>
-              </div>
+              {/* The payout IBAN used to live here. Students now transfer to
+                  one platform account that only an administrator can edit, so
+                  a per-teacher bank number is no longer part of the profile. */}
             </div>
 
             {/* Subjects */}

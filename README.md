@@ -1,6 +1,6 @@
 # Koris
 
-A Lithuanian peer-tutoring platform where students find a tutor, book a lesson, and meet inside a live room with video and a shared whiteboard. Built with Next.js 16, React 19, Tailwind v4, and Supabase.
+A Lithuanian peer-tutoring platform where an administrator pairs a student with a tutor, the tutor schedules and prices the lessons, and both meet inside a live room with video and a shared whiteboard. Built with Next.js 16, React 19, Tailwind v4, and Supabase.
 
 The UI is fully bilingual (English / Lithuanian) and the role layer (`teacher` ↔ `student`) drives what each user can see and do.
 
@@ -14,14 +14,24 @@ The UI is fully bilingual (English / Lithuanian) and the role layer (`teacher` �
 - Role-aware profile pages — teachers fill out subjects, hourly rate, bio, weekly availability; students fill out grade, struggles, expectations
 - Photo upload to Supabase Storage
 
-### Discover & book
-- Browse all tutors with subject and max-price filters
-- Tutor detail modal showing subjects, topics, bio, weekly availability grid, and price
-- Request a lesson against a tutor's open slots — date, time, subject, optional notes
+### Assignment & scheduling
+- An admin pairs a student with a teacher (`/admin/overview`); that pairing is what lets the teacher put a lesson on the student's calendar
+- The teacher schedules each lesson — date, time, subject, optional notes — and sets **what that lesson is worth**
+- A scheduled lesson is confirmed immediately: there is no student acceptance step, because the admin-made pairing is the consent
+- Either party can cancel; a cancelled lesson is excluded from earnings, which is also how a reschedule is expressed
+
+### Earnings & ratings
+- Every teacher gets a dashboard of **lessons taught**, **earned**, **received** and **outstanding**
+- "Taught" means an accepted lesson whose hour has passed, resolved in `Europe/Vilnius` rather than in the server's timezone (`src/server/services/schedule.js`)
+- After a lesson finishes, the student rates it 1–5 stars with an optional comment; the teacher's dashboard shows the average and the most recent comments
+- Admins see every teacher's dashboard side by side, plus each teacher's free-hours grid and platform-wide totals
+
+### Payments
+- One platform bank account, editable **only by admins** (`platform_billing`) — whoever teaches the lesson, the student pays the same account
+- Each lesson carries a unique payment reference so a transfer can be matched back to it
 
 ### Manage lessons
 - Tabs for **All / Pending / Accepted / Rejected**
-- Teachers accept, reject, or cancel; students track outgoing requests
 - Per-lesson detail modal with countdown to start time and a join button that activates 15 min before until 60 min after the scheduled start
 
 ### Messaging
@@ -87,18 +97,24 @@ everything they can do is bounded by RLS.
 
 `SUPABASE_SERVICE_ROLE_KEY` **bypasses RLS entirely**, so it lives only on the
 server. Find it in Dashboard → Settings → API Keys → `service_role` (Reveal).
-It is optional: route handlers run as the signed-in user, and the privileged
-reads (a tutor's payout IBAN, a lesson partner's contact details) go through
-`SECURITY DEFINER` functions that authorise themselves in SQL. Setting it lets
-the server repair a missing profile row on first sign-in.
+Most route handlers run as the signed-in user, and the privileged reads (a
+lesson partner's contact details) go through `SECURITY DEFINER` functions that
+authorise themselves in SQL. The key is required for the admin surface
+specifically — inviting teachers, assigning students, editing the payment
+account and reading every teacher's stats — because the database has no admin
+role to authorise those with; admin identity lives in `ADMIN_EMAILS`. Without
+the key those endpoints return a clear 501. It also lets the server repair a
+missing profile row on first sign-in.
 
 `LESSON_ROOM_SECRET` signs the Supabase Realtime channel names for the live
 lesson room's WebRTC signalling and whiteboard (see the "Known gap" section
 below). Without it, `/lessons/<id>/call` returns a 503.
 
-`ADMIN_EMAILS` is the allowlist for the "Invite Teacher" page — teacher
-accounts are admin-invited only, self-registration always creates a student
-(see the security section below). Needs `SUPABASE_SERVICE_ROLE_KEY` set too.
+`ADMIN_EMAILS` is the allowlist for the whole admin surface — the "Invite
+Teacher" page and the `/admin/overview` dashboard where students are assigned
+to teachers and the platform payment account is edited. Teacher accounts are
+admin-invited only; self-registration always creates a student (see the
+security section below). Needs `SUPABASE_SERVICE_ROLE_KEY` set too.
 
 ### 3. Apply the schema
 
@@ -115,7 +131,12 @@ The SQL for `profiles`, `lessons`, `messages`, plus the RLS policies live in [`d
 9. `storage_avatars.sql`
 10. `security_hardening.sql`
 11. `security_hardening_2.sql`
-12. `realtime_lesson_rooms.sql` — part 2 (policies) cannot be applied; see "Known gap" below
+12. `teacher_dashboard.sql` — lesson pricing, ratings, admin-assigned students, platform payment account
+13. `realtime_lesson_rooms.sql` — part 2 (policies) cannot be applied; see "Known gap" below
+
+> **Take a backup before step 12 as well.** `teacher_dashboard.sql` replaces
+> policies, removes the student-insert path on `lessons`, and changes the
+> return type of `lesson_counterpart_profile`.
 
 > **Take a backup before step 10.** `security_hardening.sql` revokes column
 > privileges and replaces policies — the app assumes it has run. `npm run
@@ -167,17 +188,20 @@ The browser never talks to the database. Every read and write goes
 ```
 app/
   (app)/                  protected routes — wrapped by ProtectedLayout + AppShell
-    dashboard/            week calendar + pending requests
-    lessons/              list, create, [id]/call (the lesson room)
+    admin/                overview (all teacher dashboards), teachers (invite)
+    dashboard/            earnings + week calendar (teacher), schedule (student)
+    lessons/              list, schedule, [id]/call (the lesson room)
     messages/             1-to-1 chat
     profile/              role-aware profile editor
-    tutors/               browse + filter tutors
   api/                    route handlers — the only path to the database
+    admin/                assignments, billing, stats, teachers — all requireAdmin
     auth/                 register, session
-    lessons/              list, create, [id] actions, access, counterpart, meet
+    billing/              the platform payment account (read-only here)
+    lessons/              list, create, [id] actions, access, counterpart, meet, rating
     messages/             conversations, [partnerId] thread
     profile/              me, [id], avatar
-    teachers/, students/  discovery lists
+    stats/                the signed-in teacher's own earnings and rating
+    students/             the students assigned to the calling teacher
   auth/callback/          OAuth PKCE code exchange (writes session cookies)
   login/, register/       public routes
 
@@ -237,8 +261,23 @@ their own:
   selectable by the `authenticated` role. Your own row comes back through
   `get_my_profile()`, a lesson partner's through
   `lesson_counterpart_profile()`; both are `SECURITY DEFINER` and authorise
-  themselves in SQL. IBAN travels one way — a student sees the tutor they owe,
-  never the reverse.
+  themselves in SQL. The student's learning notes travel one way — up to the
+  teacher, never back down.
+- **A teacher can only reach students an admin assigned them.** A lesson is now
+  created already `accepted`, which the earlier design refused for good reason:
+  a teacher minting an accepted lesson against an arbitrary student id was
+  unsolicited DM access to anyone on the platform. What makes it safe is
+  `teacher_students` — the insert policy requires a matching row, and no user
+  JWT can write that table.
+- **Money is write-once.** `lessons.price` is outside the UPDATE grant and
+  re-checked by `lessons_guard_update`, so a price cannot be rewritten after
+  the fact; earnings are a sum over it. The payment account lives in
+  `platform_billing`, which grants `authenticated` nothing but SELECT — the
+  only writer is the service-role client behind `requireAdmin`.
+- **A student can only rate a lesson they attended, once it has happened.** The
+  RLS policy calls `lesson_ended(date, time)`, which resolves the wall-clock
+  columns in `Europe/Vilnius`; `teacher_id` is copied from the lesson row
+  rather than taken from the request.
 - **`role` is not updatable.** It is set once at sign-up and excluded from the
   update grant, so a student cannot promote themselves to teacher.
 - **Self-service sign-up only ever creates students** (`/api/auth/register`,

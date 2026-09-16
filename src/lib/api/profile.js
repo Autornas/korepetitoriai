@@ -14,11 +14,7 @@ export function getPublicProfile(userId, options) {
   return apiGet(`/api/profile/${userId}`, options);
 }
 
-export function listTeachers(options) {
-  return apiGet('/api/teachers', options);
-}
-
-/** Teacher-only. Discovery fields only. */
+/** Teacher-only. The students an admin assigned to the caller. */
 export function listStudents(options) {
   return apiGet('/api/students', options);
 }

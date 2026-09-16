@@ -1,31 +1,29 @@
 import { withRoute } from '@/server/handler';
 import { created, ok } from '@/server/response';
-import { requireProfile } from '@/server/session';
+import { requireProfile, requireRole } from '@/server/session';
 import { parseBody, uuid, isoDate, isoTime, z } from '@/server/validate';
-import { forbidden } from '@/server/errors';
-import {
-  listMyLessons,
-  createLessonRequest,
-  scheduleLessonAsTeacher,
-} from '@/server/services/lessons';
+import { listMyLessons, scheduleLessonAsTeacher } from '@/server/services/lessons';
 
 export const dynamic = 'force-dynamic';
 
-const baseFields = {
+/**
+ * One shape now. Students no longer book lessons — an admin assigns a student
+ * to a teacher and the teacher schedules the lessons — so the `{ teacherId }`
+ * variant this endpoint used to accept is gone.
+ *
+ * `status` is still never taken from the request body; the service sets it.
+ * `price` is what the teacher charges for this particular lesson, and is the
+ * number their earnings are summed from. Omitting it is allowed and shows up
+ * on the dashboard as an unpriced lesson rather than silently counting as €0.
+ */
+const createLessonSchema = z.object({
+  studentId: uuid,
   date: isoDate,
   time: isoTime,
   subject: z.string().trim().max(120).nullish(),
   notes: z.string().trim().max(2000).nullish(),
-};
-
-/**
- * One endpoint, two shapes, discriminated by who the caller is booking.
- * `status` is never accepted from the client — the service sets it.
- */
-const createLessonSchema = z.union([
-  z.object({ teacherId: uuid, ...baseFields }),
-  z.object({ studentId: uuid, ...baseFields }),
-]);
+  price: z.number().min(0).max(10000).nullish(),
+});
 
 export const GET = withRoute(async () => {
   const ctx = await requireProfile();
@@ -33,18 +31,7 @@ export const GET = withRoute(async () => {
 });
 
 export const POST = withRoute(async (request) => {
-  const ctx = await requireProfile();
+  const ctx = await requireRole('teacher');
   const input = await parseBody(request, createLessonSchema);
-
-  if ('teacherId' in input) {
-    if (ctx.profile?.role !== 'student') {
-      throw forbidden('Only a student can request a lesson from a tutor.');
-    }
-    return created(await createLessonRequest(ctx, input));
-  }
-
-  if (ctx.profile?.role !== 'teacher') {
-    throw forbidden('Only a tutor can schedule a lesson with a student.');
-  }
   return created(await scheduleLessonAsTeacher(ctx, input));
 });

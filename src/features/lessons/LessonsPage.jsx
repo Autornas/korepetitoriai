@@ -119,12 +119,6 @@ export default function LessonsPage() {
                 : t('lessons.subtitleStudent')}
             </p>
           </div>
-          {!isTeacher && (
-            <Link href="/tutors" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#C8654A] text-white text-sm hover:bg-[#B0533A] transition-colors">
-              <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="7" cy="7" r="4"/><path d="M10 10l3 3"/></svg>
-              {t('lessons.findTutor')}
-            </Link>
-          )}
           {isTeacher && (
             <Link href="/lessons/schedule" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#C8654A] text-white text-sm hover:bg-[#B0533A] transition-colors">
               <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 3v10M3 8h10"/></svg>
@@ -193,9 +187,7 @@ export default function LessonsPage() {
                 {t(EMPTY_TAB_KEY[tab] ?? 'lessons.noLessons')}
               </p>
               {!isTeacher && tab === 'All' && (
-                <Link href="/tutors" className="mt-4 px-4 py-2 rounded-lg bg-[#C8654A] text-white text-sm hover:bg-[#B0533A] transition-colors">
-                  {t('lessons.findTutor')}
-                </Link>
+                <p className="text-xs mt-1 max-w-xs text-center">{t('dashboard.noLessonsHint')}</p>
               )}
               {isTeacher && tab === 'All' && (
                 <Link href="/lessons/schedule" className="mt-4 px-4 py-2 rounded-lg bg-[#C8654A] text-white text-sm hover:bg-[#B0533A] transition-colors">

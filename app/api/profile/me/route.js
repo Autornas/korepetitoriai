@@ -26,7 +26,6 @@ const updateProfileSchema = z
     tags: z.array(z.string().max(60)).max(30),
     bio: z.string().max(5000).nullable(),
     availability: z.array(z.string().max(20)).max(200),
-    bank_iban: z.string().trim().max(42).nullable(),
     grade: z.string().trim().max(60).nullable(),
     learning_struggles: z.string().max(2000).nullable(),
     expectations: z.string().max(2000).nullable(),

@@ -14,13 +14,17 @@ import {
   markLessonPaid,
   getLessonCounterpart,
 } from '@/lib/api/lessons';
+import { getMyStats } from '@/lib/api/stats';
+import EarningsPanel from './EarningsPanel';
+import Stars from './Stars';
 
-function TeacherDashboard({ lessons, userId, onUpdate, onMarkPaid, busyId }) {
+function TeacherDashboard({ lessons, userId, stats, onUpdate, onMarkPaid, busyId }) {
   const { t } = useLanguage();
   const [selectedId, setSelectedId] = useState(null);
+  // `pending` rows only exist from before students stopped booking their own
+  // lessons. New lessons are created accepted, so this list drains to empty
+  // and then stays empty.
   const pending = lessons.filter(l => l.status === 'pending' && l.created_by && l.created_by !== userId);
-  const accepted = lessons.filter(l => l.status === 'accepted');
-  const upcoming = accepted.filter(l => new Date(`${l.date}T${l.time}`) >= new Date());
   const selectedLesson = selectedId ? lessons.find(l => l.id === selectedId) : null;
 
   return (
@@ -33,18 +37,9 @@ function TeacherDashboard({ lessons, userId, onUpdate, onMarkPaid, busyId }) {
           onClose={() => setSelectedId(null)}
         />
       )}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
-          <p className="text-[10px] font-mono uppercase tracking-widest text-[#8A7556]">{t('dashboard.upcoming')}</p>
-          <p className="text-2xl font-semibold text-[#2A1F14] mt-1">{upcoming.length}</p>
-        </div>
-        <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
-          <p className="text-[10px] font-mono uppercase tracking-widest text-[#8A7556]">{t('dashboard.pending')}</p>
-          <p className="text-2xl font-semibold text-[#2A1F14] mt-1">{pending.length}</p>
-        </div>
-      </div>
+      <EarningsPanel stats={stats} />
 
-      <div className="grid grid-cols-[1fr_320px] gap-4">
+      <div className={pending.length > 0 ? 'grid grid-cols-[1fr_320px] gap-4' : ''}>
         <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
           <div className="flex items-center justify-between mb-1">
             <div>
@@ -56,17 +51,13 @@ function TeacherDashboard({ lessons, userId, onUpdate, onMarkPaid, busyId }) {
           <WeekCalendar lessons={lessons} onSelect={(ev) => setSelectedId(ev.id)} />
         </div>
 
+        {pending.length > 0 && (
         <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-[#2A1F14]">{t('dashboard.pendingTitle')}</h2>
             <span className="text-[10px] font-mono text-[#8A7556]">{pending.length}</span>
           </div>
-          {pending.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-[#8A7556]">
-              <p className="text-xs">{t('dashboard.noPending')}</p>
-            </div>
-          ) : (
-            <ul className="space-y-3">
+          <ul className="space-y-3">
               {pending.map(l => (
                 <li key={l.id} className="rounded-lg border border-[#EADFCB] bg-[#F4ECDF] p-3">
                   <div className="flex items-center justify-between mb-1">
@@ -130,10 +121,29 @@ function TeacherDashboard({ lessons, userId, onUpdate, onMarkPaid, busyId }) {
                   </div>
                 </li>
               ))}
-            </ul>
-          )}
+          </ul>
         </div>
+        )}
       </div>
+
+      {stats?.recentFeedback?.length > 0 && (
+        <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
+          <h2 className="text-sm font-semibold text-[#2A1F14] mb-3">{t('stats.recentFeedback')}</h2>
+          <ul className="space-y-3">
+            {stats.recentFeedback.map((f) => (
+              <li key={f.lesson_id} className="rounded-lg border border-[#EADFCB] bg-[#F4ECDF] p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Stars value={f.stars} size={14} />
+                  <span className="text-[11px] font-mono text-[#8A7556]">
+                    {String(f.created_at).slice(0, 10)}
+                  </span>
+                </div>
+                <p className="text-xs text-[#5A4A38] whitespace-pre-wrap">{f.comment}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </>
   );
 }
@@ -141,16 +151,19 @@ function TeacherDashboard({ lessons, userId, onUpdate, onMarkPaid, busyId }) {
 function StudentDashboard({ lessons, userId, onUpdate, busyId }) {
   const { t } = useLanguage();
   const [selectedId, setSelectedId] = useState(null);
-  const upcoming = lessons.filter(l => new Date(`${l.date}T${l.time}`) >= new Date());
-  const pending  = lessons.filter(l => l.status === 'pending');
-  // A tutor can now propose a lesson too, and it arrives pending. Those are
-  // the ones waiting on the student, as opposed to their own outgoing requests.
-  const awaitingMe = pending.filter(l => l.created_by && l.created_by !== userId);
+  const scheduled = lessons.filter(l => l.status === 'accepted');
+  const upcoming = scheduled.filter(l => new Date(`${l.date}T${l.time}`) >= new Date());
+  // Lessons a tutor scheduled before the acceptance step was removed. Nothing
+  // creates these any more; the block below lets the last of them be resolved.
+  const awaitingMe = lessons.filter(
+    l => l.status === 'pending' && l.created_by && l.created_by !== userId,
+  );
+  // A finished lesson the student has not rated is the one thing they are
+  // actually asked to do, so it gets the panel the tutor search used to have.
+  const toRate = scheduled.filter(
+    l => new Date(`${l.date}T${l.time}`).getTime() + 60 * 60 * 1000 <= Date.now(),
+  ).slice(0, 5);
   const selectedLesson = selectedId ? lessons.find(l => l.id === selectedId) : null;
-
-  const quickActions = [
-    { href: '/tutors',         label: t('dashboard.findTutor') },
-  ];
 
   return (
     <>
@@ -167,8 +180,8 @@ function StudentDashboard({ lessons, userId, onUpdate, busyId }) {
           <p className="text-2xl font-semibold text-[#2A1F14] mt-1">{upcoming.length}</p>
         </div>
         <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
-          <p className="text-[10px] font-mono uppercase tracking-widest text-[#8A7556]">{t('dashboard.awaiting')}</p>
-          <p className="text-2xl font-semibold text-[#2A1F14] mt-1">{pending.length}</p>
+          <p className="text-[10px] font-mono uppercase tracking-widest text-[#8A7556]">{t('dashboard.completed')}</p>
+          <p className="text-2xl font-semibold text-[#2A1F14] mt-1">{scheduled.length - upcoming.length}</p>
         </div>
       </div>
 
@@ -220,8 +233,8 @@ function StudentDashboard({ lessons, userId, onUpdate, busyId }) {
         <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-sm font-semibold text-[#2A1F14]">{t('dashboard.myRequests')}</h2>
-              <p className="text-xs text-[#8A7556] mt-0.5">{t('dashboard.myRequestsSub')}</p>
+              <h2 className="text-sm font-semibold text-[#2A1F14]">{t('dashboard.myLessons')}</h2>
+              <p className="text-xs text-[#8A7556] mt-0.5">{t('dashboard.myLessonsSub')}</p>
             </div>
             <Link href="/lessons" className="text-xs text-[#B0533A] hover:text-[#B0533A]">{t('common.viewAll')}</Link>
           </div>
@@ -229,10 +242,8 @@ function StudentDashboard({ lessons, userId, onUpdate, busyId }) {
           {lessons.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-[#8A7556]">
               <svg width="36" height="36" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6h11M5.5 2v3M10.5 2v3"/></svg>
-              <p className="text-sm mt-3">{t('dashboard.noRequests')}</p>
-              <Link href="/tutors" className="mt-4 px-4 py-2 rounded-lg bg-[#C8654A] text-white text-sm hover:bg-[#B0533A] transition-colors">
-                {t('nav.findTutor')}
-              </Link>
+              <p className="text-sm mt-3">{t('dashboard.noLessons')}</p>
+              <p className="text-xs mt-1 max-w-xs text-center">{t('dashboard.noLessonsHint')}</p>
             </div>
           ) : (
             <ul className="space-y-3">
@@ -277,16 +288,32 @@ function StudentDashboard({ lessons, userId, onUpdate, busyId }) {
 
         <div className="space-y-4">
           <div className="bg-[#FFFDF8] rounded-xl border border-[#EADFCB] p-5">
-            <h2 className="text-sm font-semibold text-[#2A1F14] mb-3">{t('dashboard.quickActions')}</h2>
-            <div className="space-y-2">
-              {quickActions.map((a, i) => (
-                <Link key={i} href={a.href} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#F4ECDF] border border-[#EADFCB] text-[#5A4A38] text-sm hover:bg-[#F4ECDF] hover:text-[#2A1F14] transition-colors group">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#C8654A] shrink-0" />
-                  <span className="flex-1">{a.label}</span>
-                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" className="text-[#8A7556] group-hover:text-[#5A4A38]"><path d="M6 4l4 4-4 4"/></svg>
-                </Link>
-              ))}
-            </div>
+            <h2 className="text-sm font-semibold text-[#2A1F14] mb-1">{t('rating.rateRecent')}</h2>
+            <p className="text-xs text-[#8A7556] mb-3">{t('rating.rateRecentSub')}</p>
+            {toRate.length === 0 ? (
+              <p className="text-xs text-[#8A7556] py-4 text-center">{t('rating.nothingToRate')}</p>
+            ) : (
+              <ul className="space-y-2">
+                {toRate.map(l => (
+                  <li key={l.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(l.id)}
+                      className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#F4ECDF] border border-[#EADFCB] text-[#5A4A38] text-sm hover:border-[#DCC9A8] hover:text-[#2A1F14] transition-colors group"
+                    >
+                      <span className="text-[#D89A3A] shrink-0">★</span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block truncate">{l.teacher?.name ?? t('dashboard.teacher')}</span>
+                        <span className="block text-[10px] font-mono text-[#8A7556]">
+                          {l.date} · {l.time?.slice(0, 5)}
+                        </span>
+                      </span>
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" className="text-[#8A7556] group-hover:text-[#5A4A38] shrink-0"><path d="M6 4l4 4-4 4"/></svg>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </div>
@@ -298,6 +325,7 @@ export default function DashboardPage() {
   const { user, role, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const [lessons, setLessons] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState('');
@@ -316,6 +344,10 @@ export default function DashboardPage() {
       // pending requests only — a handful of rows, each authorised
       // individually — rather than putting PII back into the list payload.
       if (role === 'teacher') {
+        // Earnings and rating are aggregated server-side: "taught" depends on
+        // the lesson timezone and the browser's clock is not evidence.
+        getMyStats().then(setStats).catch(() => {});
+
         const pending = list.filter(l => l.status === 'pending');
         const details = await Promise.all(
           pending.map(l =>
@@ -364,6 +396,8 @@ export default function DashboardPage() {
     setError('');
     try {
       applyUpdate(await markLessonPaid(id));
+      // "Received" and "outstanding" just moved; re-read rather than guess.
+      getMyStats().then(setStats).catch(() => {});
     } catch (e) {
       setError(e.message ?? 'Failed to update lesson.');
     }
@@ -396,7 +430,7 @@ export default function DashboardPage() {
             <div className="w-5 h-5 rounded-full border-2 border-[#C8654A] border-t-transparent animate-spin" />
           </div>
         ) : isTeacher ? (
-          <TeacherDashboard lessons={lessons} userId={user?.id} onUpdate={handleUpdate} onMarkPaid={handleMarkPaid} busyId={busyId} />
+          <TeacherDashboard lessons={lessons} userId={user?.id} stats={stats} onUpdate={handleUpdate} onMarkPaid={handleMarkPaid} busyId={busyId} />
         ) : (
           <StudentDashboard lessons={lessons} userId={user?.id} onUpdate={handleUpdate} busyId={busyId} />
         )}

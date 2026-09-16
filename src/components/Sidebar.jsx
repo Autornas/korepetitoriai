@@ -14,7 +14,7 @@ const Icons = {
   Plus:     () => <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M8 3v10M3 8h10"/></svg>,
   Folder:   () => <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M2.5 4.5a1 1 0 011-1h3l1.5 1.5h4.5a1 1 0 011 1v6a1 1 0 01-1 1h-9a1 1 0 01-1-1v-7.5z"/></svg>,
   Video:    () => <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><rect x="2" y="4" width="9" height="8" rx="1.5"/><path d="M11 7l3-2v6l-3-2"/></svg>,
-  Search:   () => <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><circle cx="7" cy="7" r="4"/><path d="M10 10l3 3"/></svg>,
+  Chart:    () => <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M2.5 13.5h11M4.5 11V7M8 11V3.5M11.5 11V8.5"/></svg>,
   Logout:   () => <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M6 3H3a1 1 0 00-1 1v8a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6"/></svg>,
 };
 
@@ -29,11 +29,7 @@ const sections = [
   
   {
     items: [
-      { href: '/tutors',         labelKey: 'nav.findTutor',      icon: 'Search', studentOnly: true },
-    ],
-  },
-  {
-    items: [
+      { href: '/admin/overview', labelKey: 'nav.adminOverview',  icon: 'Chart',  adminOnly: true },
       { href: '/admin/teachers', labelKey: 'nav.inviteTeacher',  icon: 'Plus',   adminOnly: true },
     ],
   },

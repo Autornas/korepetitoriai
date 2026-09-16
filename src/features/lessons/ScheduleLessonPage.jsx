@@ -30,6 +30,7 @@ export default function ScheduleLessonPage() {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [notes, setNotes] = useState('');
+  const [price, setPrice] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -46,7 +47,12 @@ export default function ScheduleLessonPage() {
   useEffect(() => {
     if (!user) return;
     getMyProfile()
-      .then(profile => setSubjects((profile?.subjects ?? []).filter(s => s?.name).map(s => s.name)))
+      .then(profile => {
+        setSubjects((profile?.subjects ?? []).filter(s => s?.name).map(s => s.name));
+        // A starting point, not a rule: the field stays editable so a single
+        // lesson can be priced differently without touching the profile.
+        if (profile?.price_60 != null && price === '') setPrice(String(profile.price_60));
+      })
       .catch(() => {});
   }, [user]);
 
@@ -60,7 +66,16 @@ export default function ScheduleLessonPage() {
     setSubmitting(true);
     setError('');
     try {
-      await scheduleLesson({ studentId, date, time, subject, notes });
+      await scheduleLesson({
+        studentId,
+        date,
+        time,
+        subject,
+        notes,
+        // Blank means "not priced", which the dashboard reports as such
+        // rather than counting the lesson as free.
+        price: price.trim() === '' ? null : Number(price),
+      });
       router.replace('/lessons');
     } catch (err) {
       setError(err.message ?? 'Failed to schedule lesson.');
@@ -112,7 +127,7 @@ export default function ScheduleLessonPage() {
                 ))}
               </select>
               {!loadingStudents && students.length === 0 && (
-                <p className="text-[11px] text-[#8A6418] mt-1.5">{t('schedule.noStudents')}</p>
+                <p className="text-[11px] text-[#8A6418] mt-1.5">{t('schedule.noAssigned')}</p>
               )}
             </div>
 
@@ -156,6 +171,25 @@ export default function ScheduleLessonPage() {
               </div>
             </div>
 
+            <div>
+              <label className="block text-xs text-[#8A7556] mb-1.5">{t('schedule.price')}</label>
+              <div className="flex items-center rounded-lg bg-[#F4ECDF]/60 border border-[#DCC9A8] focus-within:border-[#C8654A] transition-colors">
+                <span className="pl-3 text-[#8A7556] text-sm font-mono">€</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  max="10000"
+                  step="0.01"
+                  value={price}
+                  onChange={e => setPrice(e.target.value)}
+                  placeholder="0.00"
+                  className="flex-1 px-2 py-2 bg-transparent text-[#2A1F14] text-sm outline-none"
+                />
+              </div>
+              <p className="text-[11px] text-[#8A7556] mt-1.5">{t('schedule.priceHint')}</p>
+            </div>
+
             <hr className="border-[#EADFCB]" />
 
             <div>
@@ -186,6 +220,9 @@ export default function ScheduleLessonPage() {
               </p>
               <p className="text-base font-semibold text-[#2A1F14] mt-2 leading-snug">
                 {student?.name ?? t('schedule.noStudent')}
+              </p>
+              <p className="text-sm font-mono text-[#4F5F36] mt-1">
+                {price.trim() === '' ? t('schedule.noPrice') : `€${Number(price).toFixed(2)}`}
               </p>
               {subject && (
                 <span className="inline-flex mt-2 px-2 py-0.5 rounded-full bg-[#F6E4DA] border border-[#E8B7A2] text-[11px] text-[#B0533A]">

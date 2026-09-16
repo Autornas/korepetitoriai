@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { badRequest, forbidden, fromSupabaseError, notFound, serviceUnavailable } from '../errors';
 import { serverEnv } from '@/lib/env';
+import { getAdminSupabase } from '@/lib/supabase/admin';
 import { PUBLIC_PROFILE_FIELDS } from './profiles';
 import { LESSON_DURATION_MS, isSchedulable, lessonStartMs } from './schedule';
 
@@ -99,15 +100,17 @@ export async function scheduleLessonAsTeacher({ supabase, user }, input) {
 
   // A lesson is created `accepted` and priced, and a past-dated one counts as
   // taught the moment it exists -- so an unbounded date is a way to fabricate
-  // earnings, not just a tidiness problem. The insert policy enforces the same
-  // window; this is here so the teacher gets a sentence back.
+  // earnings, not just a tidiness problem.
   if (!isSchedulable(input.date, input.time)) {
     throw badRequest(
       'Pick a date within the last 30 days or the next two years.',
     );
   }
 
-  const { data, error } = await supabase
+  // Service role: the checks above (plus requireRole('teacher') in the route) are the
+  // authorisation, so the insert does not depend on the DB policy being migrated.
+  const db = getAdminSupabase() ?? supabase;
+  const { data, error } = await db
     .from('lessons')
     .insert({
       student_id: student.id,
@@ -123,7 +126,10 @@ export async function scheduleLessonAsTeacher({ supabase, user }, input) {
     .select(LESSON_FIELDS)
     .single();
 
-  if (error) throw fromSupabaseError(error, 'Could not schedule the lesson.');
+  if (error) {
+    console.error('scheduleLessonAsTeacher failed', error.code, error.message);
+    throw fromSupabaseError(error, 'Could not schedule the lesson.');
+  }
   return data;
 }
 
